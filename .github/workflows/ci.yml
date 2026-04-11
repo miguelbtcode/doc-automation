@@ -73,7 +73,7 @@ jobs:
 
       - name: Publish test report
         if: always() && hashFiles('test-results/**/*.trx') != ''
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         with:
           name: Test Results
           path: test-results/**/*.trx
