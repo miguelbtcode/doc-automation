@@ -1,0 +1,348 @@
+html, body {
+    font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+h1:focus {
+    outline: none;
+}
+
+.validation-message {
+    color: var(--rz-danger);
+}
+
+.blazor-error-boundary {
+    background: #b32121;
+    padding: 1rem 1rem 1rem 3.7rem;
+    color: white;
+}
+
+.blazor-error-boundary::after {
+    content: "Ocurrió un error inesperado.";
+}
+
+/* Estilos del contenido HTML renderizado en las descripciones de los pasos */
+.da-step-description h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    color: var(--rz-text-title-color, #263238);
+}
+
+.da-step-description h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.da-step-description p {
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+}
+
+.da-step-description code {
+    background: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+    font-size: 0.9em;
+    color: #c7254e;
+}
+
+.da-step-description pre {
+    background: #263238;
+    color: #eceff1;
+    padding: 1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin: 0.75rem 0;
+}
+
+.da-step-description pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+}
+
+.da-step-description blockquote {
+    border-left: 4px solid #ff9800;
+    background: #fff8e1;
+    margin: 0.75rem 0;
+    padding: 0.75rem 1rem;
+    border-radius: 0 4px 4px 0;
+}
+
+.da-step-description blockquote p {
+    margin: 0;
+}
+
+.da-step-description table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.75rem 0;
+    font-size: 0.9rem;
+}
+
+.da-step-description table th,
+.da-step-description table td {
+    border: 1px solid #e0e0e0;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+}
+
+.da-step-description table th {
+    background: #f5f5f5;
+    font-weight: 600;
+}
+
+.da-step-description ul,
+.da-step-description ol {
+    padding-left: 1.5rem;
+    margin: 0.5rem 0;
+}
+
+.da-step-description li {
+    margin-bottom: 0.25rem;
+}
+
+/* ==============================================================================
+   Page Header (con breadcrumbs)
+   ============================================================================== */
+.da-page-header-bar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.da-page-header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.da-page-header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* ==============================================================================
+   Skeleton loaders (shimmer effect)
+   ============================================================================== */
+@keyframes da-skeleton-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.da-skeleton {
+    display: block;
+    background: linear-gradient(90deg,
+        rgba(0, 0, 0, 0.06) 25%,
+        rgba(0, 0, 0, 0.12) 50%,
+        rgba(0, 0, 0, 0.06) 75%);
+    background-size: 200% 100%;
+    animation: da-skeleton-shimmer 1.6s infinite ease-in-out;
+    border-radius: 4px;
+}
+
+.da-skeleton-table {
+    width: 100%;
+}
+
+.da-skeleton-row {
+    display: flex;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.da-skeleton-cell {
+    flex: 1;
+    height: 1.25rem;
+}
+
+.da-skeleton-card-wrapper {
+    padding: 1rem;
+}
+
+.da-skeleton-title {
+    width: 40%;
+    height: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.da-skeleton-text {
+    width: 100%;
+    height: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.da-skeleton-form .da-skeleton-form-field {
+    margin-bottom: 1rem;
+}
+
+.da-skeleton-form .da-skeleton-label {
+    width: 30%;
+    height: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.da-skeleton-form .da-skeleton-input {
+    width: 100%;
+    height: 2.5rem;
+}
+
+html[data-theme="dark"] .da-skeleton {
+    background: linear-gradient(90deg,
+        rgba(255, 255, 255, 0.06) 25%,
+        rgba(255, 255, 255, 0.14) 50%,
+        rgba(255, 255, 255, 0.06) 75%);
+    background-size: 200% 100%;
+}
+
+/* ==============================================================================
+   Recent Actions Menu (bell + dropdown)
+   ============================================================================== */
+.da-recent-actions-menu {
+    position: relative;
+    display: inline-block;
+}
+
+.da-recent-actions-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: var(--rz-danger);
+    color: white;
+    font-size: 0.625rem;
+    font-weight: 600;
+    padding: 0 5px;
+    border-radius: 10px;
+    min-width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.da-recent-actions-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    min-width: 360px;
+    max-width: 420px;
+    max-height: 500px;
+    background: var(--rz-base-background-color, #fff);
+    border: 1px solid var(--rz-border-color, rgba(0, 0, 0, 0.12));
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.da-recent-actions-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--rz-border-color, rgba(0, 0, 0, 0.08));
+}
+
+.da-recent-actions-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    gap: 0.5rem;
+    color: var(--rz-text-secondary-color);
+}
+
+.da-recent-actions-list {
+    overflow-y: auto;
+    flex: 1;
+}
+
+.da-recent-action-item {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--rz-border-color, rgba(0, 0, 0, 0.05));
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.da-recent-action-item:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.da-recent-action-icon {
+    flex-shrink: 0;
+    padding-top: 2px;
+}
+
+.da-recent-action-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.da-recent-action-title {
+    font-weight: 500;
+    font-size: 0.875rem;
+    margin-bottom: 2px;
+}
+
+.da-recent-action-detail {
+    font-size: 0.8125rem;
+    color: var(--rz-text-secondary-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.da-recent-action-time {
+    font-size: 0.75rem;
+    color: var(--rz-text-secondary-color);
+    margin-top: 2px;
+}
+
+.da-recent-action-success .da-recent-action-icon { color: var(--rz-success); }
+.da-recent-action-warning .da-recent-action-icon { color: var(--rz-warning); }
+.da-recent-action-error .da-recent-action-icon { color: var(--rz-danger); }
+.da-recent-action-info .da-recent-action-icon { color: var(--rz-info); }
+
+/* ==============================================================================
+   Dark theme adjustments
+   ============================================================================== */
+html[data-theme="dark"] .da-recent-actions-dropdown {
+    background: #1e1e1e;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme="dark"] .da-recent-action-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+html[data-theme="dark"] .da-step-description code {
+    background: #2d2d2d;
+    color: #ff79c6;
+}
+
+html[data-theme="dark"] .da-step-description table th {
+    background: #2d2d2d;
+}
+
+html[data-theme="dark"] .da-step-description table th,
+html[data-theme="dark"] .da-step-description table td {
+    border-color: #444;
+}

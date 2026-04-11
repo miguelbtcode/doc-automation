@@ -1,0 +1,15 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/DocAutomation.AppHost/DocAutomation.AppHost.csproj" />
+    <Project Path="src/DocAutomation.Application/DocAutomation.Application.csproj" />
+    <Project Path="src/DocAutomation.Domain/DocAutomation.Domain.csproj" />
+    <Project Path="src/DocAutomation.Infrastructure/DocAutomation.Infrastructure.csproj" />
+    <Project Path="src/DocAutomation.ServiceDefaults/DocAutomation.ServiceDefaults.csproj" />
+    <Project Path="src/DocAutomation.Web/DocAutomation.Web.csproj" />
+  </Folder>
+</Solution>

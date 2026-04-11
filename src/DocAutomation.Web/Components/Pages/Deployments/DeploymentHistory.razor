@@ -1,0 +1,64 @@
+@page "/deployments/history"
+@using DocAutomation.Application.Features.Deployments.Queries.GetAllDeployments
+@using DocAutomation.Application.Features.Templates.Models
+@using DocAutomation.Application.Features.Deployments.Models
+@using DocAutomation.Domain.Enums
+@using DocAutomation.Application.Common.Cqrs
+@inject IMediator Mediator
+@inject NavigationManager Nav
+
+<PageTitle>Historial de Pases</PageTitle>
+
+<PageHeader Title="Historial de Pases"
+            Subtitle="Todos los MVPs generados a partir de templates"
+            Breadcrumbs="@(new List<PageHeader.BreadcrumbItem> { new("Pases"), new("Historial") })">
+    <Actions>
+        <RadzenButton Text="Nuevo Pase" Icon="add" ButtonStyle="ButtonStyle.Primary"
+                      Click="@(() => Nav.NavigateTo("/deployments/new"))" />
+    </Actions>
+</PageHeader>
+
+<RadzenDataGrid Data="@_deployments" TItem="DeploymentListItemDto" IsLoading="@_loading"
+                AllowPaging="true" PageSize="20" AllowSorting="true" AllowFiltering="true"
+                Density="Density.Compact">
+    <Columns>
+        <RadzenDataGridColumn TItem="DeploymentListItemDto" Property="TemplateName" Title="Template" />
+        <RadzenDataGridColumn TItem="DeploymentListItemDto" Property="TemplateVersion" Title="Versión" Width="100px" />
+        <RadzenDataGridColumn TItem="DeploymentListItemDto" Property="Status" Title="Estado" Width="140px">
+            <Template Context="d">
+                <RadzenBadge BadgeStyle="@StatusBadge(d.Status)" Text="@d.Status.ToString()" />
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="DeploymentListItemDto" Property="CompletedBy" Title="Operador" />
+        <RadzenDataGridColumn TItem="DeploymentListItemDto" Property="StartedAt" Title="Inicio" FormatString="{0:yyyy-MM-dd HH:mm}" Width="170px" />
+        <RadzenDataGridColumn TItem="DeploymentListItemDto" Property="DurationMinutes" Title="Duración (min)" Width="140px" />
+        <RadzenDataGridColumn TItem="DeploymentListItemDto" Title="" Width="80px" Sortable="false" Filterable="false">
+            <Template Context="d">
+                <RadzenButton Icon="visibility" Variant="Variant.Text" Size="ButtonSize.Small"
+                              Click="@(() => Nav.NavigateTo($"/deployments/{d.Id}"))" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+    <EmptyTemplate>
+        <RadzenText Class="rz-p-4">Todavía no se generaron MVPs.</RadzenText>
+    </EmptyTemplate>
+</RadzenDataGrid>
+
+@code {
+    private IReadOnlyList<DeploymentListItemDto> _deployments = Array.Empty<DeploymentListItemDto>();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _deployments = await Mediator.Send(new GetAllDeploymentsQuery());
+        _loading = false;
+    }
+
+    private static BadgeStyle StatusBadge(DeploymentStatus status) => status switch
+    {
+        DeploymentStatus.Completed => BadgeStyle.Success,
+        DeploymentStatus.Failed => BadgeStyle.Danger,
+        DeploymentStatus.Reverted => BadgeStyle.Warning,
+        _ => BadgeStyle.Info
+    };
+}

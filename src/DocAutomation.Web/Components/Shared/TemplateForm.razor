@@ -1,0 +1,134 @@
+@namespace DocAutomation.Web.Components.Shared
+@using DocAutomation.Application.Features.Templates.Models
+@using DocAutomation.Application.Features.Deployments.Models
+@using DocAutomation.Domain.Enums
+
+<RadzenText TextStyle="TextStyle.H6" Class="rz-mb-3">Información General</RadzenText>
+<RadzenRow Gap="1rem">
+    <RadzenColumn Size="12" SizeMD="6">
+        <RadzenFormField Text="Nombre *" Variant="Variant.Outlined" Style="width: 100%;">
+            <RadzenTextBox @bind-Value="Model.Name" MaxLength="200" />
+        </RadzenFormField>
+    </RadzenColumn>
+    <RadzenColumn Size="12" SizeMD="6">
+        <RadzenFormField Text="Slug *" Variant="Variant.Outlined" Style="width: 100%;">
+            <RadzenTextBox @bind-Value="Model.Slug" Disabled="@SlugDisabled" />
+        </RadzenFormField>
+        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+            Minúsculas, números y guiones. Ej: iis-web-deploy
+        </RadzenText>
+    </RadzenColumn>
+    <RadzenColumn Size="12">
+        <RadzenFormField Text="Descripción del template" Variant="Variant.Outlined" Style="width: 100%;">
+            <RadzenTextArea @bind-Value="Model.Description" Rows="2" MaxLength="1000" />
+        </RadzenFormField>
+    </RadzenColumn>
+</RadzenRow>
+
+<hr class="rz-my-6" />
+
+<RadzenText TextStyle="TextStyle.H6" Class="rz-mb-2">Variables del Formulario</RadzenText>
+<RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-3" Style="color: var(--rz-text-secondary-color);">
+    Definí los campos que el operador completará al generar un pase. Las keys se referencian
+    desde las descripciones con <code>@("{{key}}")</code> para ser reemplazadas en runtime.
+</RadzenText>
+
+<RadzenDataGrid Data="@Model.Inputs" TItem="TemplateInputDto" AllowPaging="false" Density="Density.Compact">
+    <Columns>
+        <RadzenDataGridColumn TItem="TemplateInputDto" Property="DisplayOrder" Title="Orden" Width="90px">
+            <Template Context="input">
+                <RadzenNumeric @bind-Value="input.DisplayOrder" Min="1" ShowUpDown="false" />
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="TemplateInputDto" Property="Key" Title="Key">
+            <Template Context="input">
+                <RadzenTextBox @bind-Value="input.Key" Placeholder="servidor" />
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="TemplateInputDto" Property="Label" Title="Label">
+            <Template Context="input">
+                <RadzenTextBox @bind-Value="input.Label" Placeholder="Servidor" />
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="TemplateInputDto" Property="InputType" Title="Tipo" Width="150px">
+            <Template Context="input">
+                <RadzenDropDown @bind-Value="input.InputType" Data="@InputTypes" Style="width: 100%;" />
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="TemplateInputDto" Property="IsRequired" Title="Requerido" Width="110px">
+            <Template Context="input">
+                <RadzenCheckBox @bind-Value="input.IsRequired" />
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="TemplateInputDto" Property="HelpText" Title="Help Text">
+            <Template Context="input">
+                <RadzenTextBox @bind-Value="input.HelpText" />
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="TemplateInputDto" Title="" Width="60px" Sortable="false">
+            <Template Context="input">
+                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Text"
+                              Size="ButtonSize.Small" Click="@(() => RemoveInput(input))" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+<RadzenButton Text="Agregar variable" Icon="add" Variant="Variant.Text" ButtonStyle="ButtonStyle.Primary"
+              Class="rz-mt-2" Click="AddInput" />
+
+<hr class="rz-my-6" />
+
+<RadzenText TextStyle="TextStyle.H6" Class="rz-mb-2">Pasos del Pase</RadzenText>
+<RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-4" Style="color: var(--rz-text-secondary-color);">
+    Organizá los pasos en tres secciones. Cada paso tiene un <b>título</b> corto y una
+    <b>descripción detallada</b> con formato enriquecido (colores, listas, títulos, código, etc.).
+    En las descripciones podés usar <code>@("{{variable}}")</code> para referenciar las variables
+    definidas arriba.
+</RadzenText>
+
+<StepsEditor Model="Model.Steps" />
+
+@code {
+    [Parameter, EditorRequired] public TemplateFormModel Model { get; set; } = null!;
+    [Parameter] public bool SlugDisabled { get; set; }
+
+    private static readonly InputType[] InputTypes = Enum.GetValues<InputType>();
+
+    public Task<bool> ValidateAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Model.Name)) return Task.FromResult(false);
+        if (string.IsNullOrWhiteSpace(Model.Slug)) return Task.FromResult(false);
+        if (Model.Inputs.Count == 0) return Task.FromResult(false);
+        if (Model.Steps.MainSteps.Count == 0) return Task.FromResult(false);
+
+        if (HasEmptyDescriptions(Model.Steps.MainSteps)) return Task.FromResult(false);
+        if (HasEmptyDescriptions(Model.Steps.PostSteps)) return Task.FromResult(false);
+        if (HasEmptyDescriptions(Model.Steps.ReversionSteps)) return Task.FromResult(false);
+
+        return Task.FromResult(true);
+    }
+
+    private static bool HasEmptyDescriptions(List<StepEditModel> steps)
+    {
+        foreach (var step in steps)
+        {
+            if (string.IsNullOrWhiteSpace(step.Title)) return true;
+            if (string.IsNullOrWhiteSpace(step.Description)) return true;
+            if (HasEmptyDescriptions(step.OnFailSteps)) return true;
+        }
+        return false;
+    }
+
+    private void AddInput()
+    {
+        Model.Inputs.Add(new TemplateInputDto
+        {
+            DisplayOrder = Model.Inputs.Count + 1,
+            InputType = InputType.Text,
+            IsRequired = true
+        });
+    }
+
+    private void RemoveInput(TemplateInputDto input) => Model.Inputs.Remove(input);
+}

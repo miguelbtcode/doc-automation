@@ -1,0 +1,245 @@
+@page "/deployments/{Id:guid}"
+@using System.Text.Json
+@using DocAutomation.Application.Features.Deployments.Queries.GetDeploymentById
+@using DocAutomation.Application.Features.Deployments.Models
+@using DocAutomation.Application.Features.Templates.Models
+@using DocAutomation.Domain.Enums
+@using DocAutomation.Application.Common.Cqrs
+@inject IMediator Mediator
+@inject NavigationManager Nav
+@inject NotificationService NotificationService
+@inject IJSRuntime JS
+
+<PageTitle>MVP Generado</PageTitle>
+
+@if (_loading)
+{
+    <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+}
+else if (_deployment is null || _document is null)
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger">No se encontró el pase.</RadzenAlert>
+}
+else
+{
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem" Class="rz-mb-4">
+        <RadzenButton Icon="arrow_back" Variant="Variant.Text" Click="@(() => Nav.NavigateTo("/deployments/history"))" />
+        <RadzenText TextStyle="TextStyle.H4">@_deployment.TemplateName</RadzenText>
+        <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"v{_deployment.TemplateVersion}")" />
+    </RadzenStack>
+
+    <RadzenAlert AlertStyle="AlertStyle.Info" Shade="Shade.Lighter" Class="rz-mb-4">
+        <RadzenStack Gap="0.25rem">
+            <RadzenText TextStyle="TextStyle.Body1">
+                <b>MVP generado a partir del template.</b>
+                Este documento contiene todas las instrucciones para el ingeniero que ejecutará el pase en producción.
+            </RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
+                <b>Generado por:</b> @_deployment.CompletedBy
+                &nbsp;·&nbsp;
+                <b>Fecha:</b> @_deployment.StartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+            </RadzenText>
+        </RadzenStack>
+    </RadzenAlert>
+
+    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Class="rz-mb-4">
+        <RadzenButton Text="Copiar como HTML (para pegar en Jira)" Icon="content_copy"
+                      ButtonStyle="ButtonStyle.Primary" Click="CopyAsHtml" />
+        <RadzenButton Text="Descargar .html" Icon="download"
+                      ButtonStyle="ButtonStyle.Base" Variant="Variant.Outlined" Click="ExportAsHtml" />
+    </RadzenStack>
+
+    @RenderSection("Pasos Principales", _document.Steps, "rocket_launch", "var(--rz-primary)",
+        "Pasos a ejecutar en orden para realizar el pase a producción.")
+
+    @RenderSection("Post-Pase", _document.PostSteps, "cleaning_services", "var(--rz-info)",
+        "Tareas de limpieza y cierre posteriores al pase exitoso.")
+
+    @RenderSection("Reversión", _document.Reversion, "undo", "var(--rz-danger)",
+        "⚠ Sección de reversión: ejecutar SOLO si el pase principal falló y es necesario revertir los cambios.")
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private DeploymentDto? _deployment;
+    private TemplateDocument? _document;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        _deployment = await Mediator.Send(new GetDeploymentByIdQuery(Id));
+        if (_deployment is not null && !string.IsNullOrWhiteSpace(_deployment.RenderedStepsJson))
+        {
+            try
+            {
+                _document = JsonSerializer.Deserialize<TemplateDocument>(
+                    _deployment.RenderedStepsJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            catch
+            {
+                _document = new TemplateDocument();
+            }
+        }
+        _loading = false;
+    }
+
+    private RenderFragment RenderSection(string title, List<StepDefinition> steps, string icon, string color, string helpText) => builder =>
+    {
+        if (steps.Count == 0) return;
+
+        var seq = 0;
+        builder.OpenComponent<RadzenCard>(seq++);
+        builder.AddAttribute(seq++, "Variant", Variant.Outlined);
+        builder.AddAttribute(seq++, "Class", "rz-p-6 rz-mb-4");
+        builder.AddAttribute(seq++, "ChildContent", (RenderFragment)(inner =>
+        {
+            var s = 0;
+
+            inner.OpenComponent<RadzenStack>(s++);
+            inner.AddAttribute(s++, "Orientation", Orientation.Horizontal);
+            inner.AddAttribute(s++, "AlignItems", AlignItems.Center);
+            inner.AddAttribute(s++, "Gap", "0.75rem");
+            inner.AddAttribute(s++, "Class", "rz-mb-2");
+            inner.AddAttribute(s++, "ChildContent", (RenderFragment)(h =>
+            {
+                var hs = 0;
+                h.OpenComponent<RadzenIcon>(hs++);
+                h.AddAttribute(hs++, "Icon", icon);
+                h.AddAttribute(hs++, "Style", $"color: {color}; font-size: 2rem;");
+                h.CloseComponent();
+                h.OpenComponent<RadzenText>(hs++);
+                h.AddAttribute(hs++, "TextStyle", TextStyle.H5);
+                h.AddAttribute(hs++, "ChildContent", (RenderFragment)(t => t.AddContent(0, title)));
+                h.CloseComponent();
+                h.AddMarkupContent(hs++, "<div style=\"flex: 1;\"></div>");
+                h.OpenComponent<RadzenBadge>(hs++);
+                h.AddAttribute(hs++, "BadgeStyle", BadgeStyle.Light);
+                h.AddAttribute(hs++, "Text", $"{steps.Count} pasos");
+                h.CloseComponent();
+            }));
+            inner.CloseComponent();
+
+            inner.OpenComponent<RadzenText>(s++);
+            inner.AddAttribute(s++, "TextStyle", TextStyle.Body2);
+            inner.AddAttribute(s++, "Class", "rz-mb-4");
+            inner.AddAttribute(s++, "Style", "color: var(--rz-text-secondary-color);");
+            inner.AddAttribute(s++, "ChildContent", (RenderFragment)(t => t.AddContent(0, helpText)));
+            inner.CloseComponent();
+
+            inner.OpenComponent<RadzenAccordion>(s++);
+            inner.AddAttribute(s++, "Multiple", true);
+            inner.AddAttribute(s++, "Items", (RenderFragment)(acc =>
+            {
+                var a = 0;
+                var idx = 0;
+                foreach (var step in steps)
+                {
+                    idx++;
+                    var captured = step;
+                    var capturedIdx = idx;
+
+                    acc.OpenComponent<RadzenAccordionItem>(a++);
+                    acc.AddAttribute(a++, "Text", $"{capturedIdx}. {captured.Title}");
+                    acc.AddAttribute(a++, "Icon", captured.Type == StepType.Verification ? "warning" : "play_arrow");
+                    acc.AddAttribute(a++, "ChildContent", (RenderFragment)(body =>
+                    {
+                        var bs = 0;
+                        body.OpenElement(bs++, "div");
+                        body.AddAttribute(bs++, "class", "da-step-description rz-p-3");
+                        body.AddMarkupContent(bs++, string.IsNullOrWhiteSpace(captured.Description) ? "<p><em>Sin descripción.</em></p>" : captured.Description);
+
+                        if (captured.OnFail is { Steps.Count: > 0 })
+                        {
+                            body.OpenElement(bs++, "div");
+                            body.AddAttribute(bs++, "style", "margin-top: 1rem; padding: 1rem; background: #fff8e1; border-left: 3px solid #ff9800; border-radius: 4px;");
+                            body.OpenElement(bs++, "strong");
+                            body.AddAttribute(bs++, "style", "color: #e65100; font-size: 0.95rem;");
+                            body.AddContent(bs++, "↳ Si falla, ejecutar:");
+                            body.CloseElement();
+
+                            var subIdx = 0;
+                            foreach (var sub in captured.OnFail.Steps)
+                            {
+                                subIdx++;
+                                body.OpenElement(bs++, "div");
+                                body.AddAttribute(bs++, "style", "margin-top: 1rem; padding-left: 1rem; border-left: 2px solid #ffb74d;");
+                                body.OpenElement(bs++, "strong");
+                                body.AddAttribute(bs++, "style", "color: #e65100;");
+                                body.AddContent(bs++, $"{capturedIdx}.{subIdx} {sub.Title}");
+                                body.CloseElement();
+                                body.OpenElement(bs++, "div");
+                                body.AddAttribute(bs++, "style", "margin-top: 0.5rem;");
+                                body.AddMarkupContent(bs++, sub.Description ?? "");
+                                body.CloseElement();
+                                body.CloseElement();
+                            }
+
+                            body.CloseElement();
+                        }
+
+                        body.CloseElement();
+                    }));
+                    acc.CloseComponent();
+                }
+            }));
+            inner.CloseComponent();
+        }));
+        builder.CloseComponent();
+    };
+
+    private string BuildHtmlReport()
+    {
+        if (_document is null || _deployment is null) return string.Empty;
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"<h1>{_deployment.TemplateName} (v{_deployment.TemplateVersion})</h1>");
+        sb.AppendLine($"<p><strong>Generado:</strong> {_deployment.StartedAt:yyyy-MM-dd HH:mm} UTC por {_deployment.CompletedBy}</p>");
+
+        AppendSectionHtml(sb, "Pasos Principales", _document.Steps);
+        AppendSectionHtml(sb, "Post-Pase", _document.PostSteps);
+        AppendSectionHtml(sb, "Reversión", _document.Reversion);
+
+        return sb.ToString();
+    }
+
+    private static void AppendSectionHtml(System.Text.StringBuilder sb, string title, List<StepDefinition> steps)
+    {
+        if (steps.Count == 0) return;
+        sb.AppendLine($"<h2>{title}</h2>");
+        var idx = 0;
+        foreach (var step in steps)
+        {
+            idx++;
+            sb.AppendLine($"<h3>{idx}. {step.Title}</h3>");
+            sb.AppendLine(step.Description);
+            if (step.OnFail is { Steps.Count: > 0 })
+            {
+                sb.AppendLine("<p><em>↳ Si falla, ejecutar:</em></p>");
+                var subIdx = 0;
+                foreach (var sub in step.OnFail.Steps)
+                {
+                    subIdx++;
+                    sb.AppendLine($"<h4>{idx}.{subIdx} {sub.Title}</h4>");
+                    sb.AppendLine(sub.Description);
+                }
+            }
+        }
+    }
+
+    private async Task CopyAsHtml()
+    {
+        var content = BuildHtmlReport();
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", content);
+        NotificationService.Notify(NotificationSeverity.Success, "HTML copiado al portapapeles.");
+    }
+
+    private async Task ExportAsHtml()
+    {
+        var content = BuildHtmlReport();
+        var fileName = $"mvp-{_deployment!.TemplateSlug}-{_deployment.StartedAt:yyyyMMdd-HHmmss}.html";
+        await JS.InvokeVoidAsync("docAutomation.downloadText", fileName, content);
+    }
+}

@@ -1,0 +1,143 @@
+@page "/admin/templates/edit/{Id:guid}"
+@using DocAutomation.Application.Features.Templates.Commands.UpdateTemplate
+@using DocAutomation.Application.Features.Templates.Queries.GetTemplateById
+@using DocAutomation.Application.Common.Cqrs
+@inject IMediator Mediator
+@inject NavigationManager Nav
+@inject NotificationService NotificationService
+@inject KeyboardShortcutService Shortcuts
+@inject UnsavedChangesGuard Guard
+@inject RecentActionsService RecentActions
+@implements IDisposable
+
+<PageTitle>Editar Template</PageTitle>
+
+<PageHeader Title="@(_model?.Name is { Length: > 0 } name ? name : "Editar Template")"
+            BackPath="/admin/templates"
+            Breadcrumbs="@(new List<PageHeader.BreadcrumbItem> { new("Administración"), new("Templates", "/admin/templates"), new("Editar") })">
+    <TitleBadges>
+        @if (_model is not null)
+        {
+            <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"v{_version}")" />
+        }
+    </TitleBadges>
+    <Actions>
+        <RadzenButton Text="Cancelar" Variant="Variant.Flat" ButtonStyle="ButtonStyle.Base"
+                      Click="@(() => Nav.NavigateTo("/admin/templates"))" />
+        <RadzenButton Text="@(_saving ? "Guardando..." : "Guardar Cambios (Ctrl+S)")" Icon="save"
+                      ButtonStyle="ButtonStyle.Primary" Disabled="_saving || _loading || _model is null"
+                      Click="SaveAsync" />
+    </Actions>
+</PageHeader>
+
+@if (_loading)
+{
+    <RadzenCard Variant="Variant.Outlined" Class="rz-p-6">
+        <LoadingSkeleton Type="LoadingSkeleton.SkeletonType.Form" Rows="6" />
+    </RadzenCard>
+}
+else if (_model is null)
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger">No se encontró el template.</RadzenAlert>
+}
+else
+{
+    <RadzenCard Variant="Variant.Outlined" Class="rz-p-6">
+        <TemplateForm @ref="_templateForm" Model="_model" />
+    </RadzenCard>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private TemplateFormModel? _model;
+    private TemplateForm _templateForm = null!;
+    private bool _loading = true;
+    private bool _saving;
+    private int _version;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Shortcuts.ShortcutTriggered += OnShortcutAsync;
+
+        var dto = await Mediator.Send(new GetTemplateByIdQuery(Id));
+        if (dto is null)
+        {
+            _loading = false;
+            return;
+        }
+
+        _version = dto.Version;
+        _model = new TemplateFormModel
+        {
+            Id = dto.Id,
+            Slug = dto.Slug,
+            Name = dto.Name,
+            Description = dto.Description,
+            Steps = StepsJsonConverter.FromJson(dto.StepsJson),
+            Inputs = dto.Inputs.ToList()
+        };
+        _loading = false;
+    }
+
+    private Task OnShortcutAsync(string key) => key == "ctrl+s" ? SaveAsync() : Task.CompletedTask;
+
+    private async Task SaveAsync()
+    {
+        if (_model is null || _saving) return;
+        if (!await _templateForm.ValidateAsync())
+        {
+            NotificationService.Notify(NotificationSeverity.Warning,
+                "Completá todos los campos",
+                "Todos los pasos deben tener título y descripción.");
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            var stepsJson = StepsJsonConverter.ToJson(_model.Steps);
+            var ok = await Mediator.Send(new UpdateTemplateCommand(
+                Id,
+                _model.Slug,
+                _model.Name,
+                _model.Description,
+                stepsJson,
+                _model.Inputs));
+
+            if (ok)
+            {
+                await Guard.MarkCleanAsync();
+                NotificationService.Notify(NotificationSeverity.Success, "Template actualizado.");
+                await RecentActions.LogAsync($"Template actualizado: {_model.Name}",
+                    detail: $"v{_version + 1}",
+                    severity: RecentActionSeverity.Success,
+                    href: $"/admin/templates/preview/{Id}");
+                Nav.NavigateTo("/admin/templates");
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "No se encontró el template.");
+            }
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            foreach (var err in ex.Errors)
+                NotificationService.Notify(NotificationSeverity.Error, err.ErrorMessage);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        Shortcuts.ShortcutTriggered -= OnShortcutAsync;
+        _ = Guard.MarkCleanAsync();
+    }
+}

@@ -1,0 +1,173 @@
+@page "/admin/templates/preview/{Id:guid}"
+@using DocAutomation.Application.Features.Templates.Models
+@using DocAutomation.Application.Features.Deployments.Models
+@using DocAutomation.Application.Features.Templates.Queries.GetTemplateById
+@using DocAutomation.Domain.Enums
+@using DocAutomation.Web.Components.Shared
+@using DocAutomation.Application.Common.Cqrs
+@inject IMediator Mediator
+@inject NavigationManager Nav
+
+<PageTitle>Preview Template</PageTitle>
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem" Class="rz-mb-4">
+    <RadzenButton Icon="arrow_back" Variant="Variant.Text" Click="@(() => Nav.NavigateTo("/admin/templates"))" />
+    <RadzenText TextStyle="TextStyle.H4">Preview del Template</RadzenText>
+</RadzenStack>
+
+@if (_loading)
+{
+    <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+}
+else if (_template is null)
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger">No se encontró el template.</RadzenAlert>
+}
+else
+{
+    <RadzenCard Variant="Variant.Outlined" Class="rz-p-6 rz-mb-4">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem" Class="rz-mb-3">
+            <RadzenText TextStyle="TextStyle.H5">@_template.Name</RadzenText>
+            <div style="flex: 1;"></div>
+            <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"v{_template.Version}")" />
+            <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@_template.Slug" />
+        </RadzenStack>
+
+        @if (!string.IsNullOrWhiteSpace(_template.Description))
+        {
+            <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-3" Style="color: var(--rz-text-secondary-color);">
+                @_template.Description
+            </RadzenText>
+        }
+
+        <RadzenButton Text="Editar" Icon="edit" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined"
+                      Click="@(() => Nav.NavigateTo($"/admin/templates/edit/{_template.Id}"))" />
+    </RadzenCard>
+
+    <RadzenCard Variant="Variant.Outlined" Class="rz-p-6 rz-mb-4">
+        <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-3">Variables del Formulario</RadzenText>
+        <RadzenDataGrid Data="@_template.Inputs" TItem="TemplateInputDto" AllowPaging="false" Density="Density.Compact">
+            <Columns>
+                <RadzenDataGridColumn TItem="TemplateInputDto" Property="DisplayOrder" Title="#" Width="60px" />
+                <RadzenDataGridColumn TItem="TemplateInputDto" Property="Key" Title="Key">
+                    <Template Context="i"><code>@i.Key</code></Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="TemplateInputDto" Property="Label" Title="Label" />
+                <RadzenDataGridColumn TItem="TemplateInputDto" Property="InputType" Title="Tipo" Width="120px" />
+                <RadzenDataGridColumn TItem="TemplateInputDto" Property="IsRequired" Title="Requerido" Width="110px">
+                    <Template Context="i">@(i.IsRequired ? "Sí" : "No")</Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="TemplateInputDto" Property="HelpText" Title="Ayuda" />
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenCard>
+
+    <RadzenCard Variant="Variant.Outlined" Class="rz-p-6">
+        <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-3">Estructura de Pasos</RadzenText>
+        @RenderSection("Pasos Principales", _stepsModel.MainSteps, "rocket_launch", "var(--rz-primary)")
+        @RenderSection("Post-Pase", _stepsModel.PostSteps, "cleaning_services", "var(--rz-info)")
+        @RenderSection("Reversión", _stepsModel.ReversionSteps, "undo", "var(--rz-danger)")
+    </RadzenCard>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private TemplateDto? _template;
+    private StepsEditorModel _stepsModel = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _template = await Mediator.Send(new GetTemplateByIdQuery(Id));
+        if (_template is not null)
+            _stepsModel = StepsJsonConverter.FromJson(_template.StepsJson);
+        _loading = false;
+    }
+
+    private RenderFragment RenderSection(string title, List<StepEditModel> steps, string icon, string color) => builder =>
+    {
+        if (steps.Count == 0) return;
+
+        var seq = 0;
+        builder.OpenElement(seq++, "div");
+        builder.AddAttribute(seq++, "class", "rz-mt-4");
+
+        builder.OpenComponent<RadzenStack>(seq++);
+        builder.AddAttribute(seq++, "Orientation", Orientation.Horizontal);
+        builder.AddAttribute(seq++, "AlignItems", AlignItems.Center);
+        builder.AddAttribute(seq++, "Gap", "0.5rem");
+        builder.AddAttribute(seq++, "Class", "rz-mb-2");
+        builder.AddAttribute(seq++, "ChildContent", (RenderFragment)(h =>
+        {
+            var hs = 0;
+            h.OpenComponent<RadzenIcon>(hs++);
+            h.AddAttribute(hs++, "Icon", icon);
+            h.AddAttribute(hs++, "Style", $"color: {color};");
+            h.CloseComponent();
+            h.OpenComponent<RadzenText>(hs++);
+            h.AddAttribute(hs++, "TextStyle", TextStyle.Subtitle1);
+            h.AddAttribute(hs++, "ChildContent", (RenderFragment)(t => t.AddContent(0, $"{title} ({steps.Count})")));
+            h.CloseComponent();
+        }));
+        builder.CloseComponent();
+
+        builder.OpenComponent<RadzenAccordion>(seq++);
+        builder.AddAttribute(seq++, "Multiple", true);
+        builder.AddAttribute(seq++, "Items", (RenderFragment)(acc =>
+        {
+            var a = 0;
+            var idx = 0;
+            foreach (var step in steps)
+            {
+                idx++;
+                var captured = step;
+                var capturedIdx = idx;
+                acc.OpenComponent<RadzenAccordionItem>(a++);
+                acc.AddAttribute(a++, "Text", $"{capturedIdx}. {captured.Title}");
+                acc.AddAttribute(a++, "Icon", captured.Type == StepType.Verification ? "warning" : "check_circle_outline");
+                acc.AddAttribute(a++, "ChildContent", (RenderFragment)(body =>
+                {
+                    var bs = 0;
+                    body.OpenElement(bs++, "div");
+                    body.AddAttribute(bs++, "class", "rz-p-3");
+                    body.AddMarkupContent(bs++, string.IsNullOrWhiteSpace(captured.Description) ? "<p><em>Sin descripción.</em></p>" : captured.Description);
+
+                    if (captured.OnFailSteps.Count > 0)
+                    {
+                        body.OpenElement(bs++, "div");
+                        body.AddAttribute(bs++, "style", "margin-top: 1rem; padding: 1rem; background: #fff8e1; border-left: 3px solid #ff9800; border-radius: 4px;");
+                        body.OpenElement(bs++, "strong");
+                        body.AddAttribute(bs++, "style", "color: #e65100;");
+                        body.AddContent(bs++, "↳ Si falla, ejecutar:");
+                        body.CloseElement();
+
+                        var subIdx = 0;
+                        foreach (var sub in captured.OnFailSteps)
+                        {
+                            subIdx++;
+                            body.OpenElement(bs++, "div");
+                            body.AddAttribute(bs++, "style", "margin-top: 0.75rem;");
+                            body.OpenElement(bs++, "strong");
+                            body.AddContent(bs++, $"{capturedIdx}.{subIdx} {sub.Title}");
+                            body.CloseElement();
+                            body.OpenElement(bs++, "div");
+                            body.AddAttribute(bs++, "style", "margin-top: 0.5rem;");
+                            body.AddMarkupContent(bs++, sub.Description);
+                            body.CloseElement();
+                            body.CloseElement();
+                        }
+
+                        body.CloseElement();
+                    }
+
+                    body.CloseElement();
+                }));
+                acc.CloseComponent();
+            }
+        }));
+        builder.CloseComponent();
+
+        builder.CloseElement();
+    };
+}

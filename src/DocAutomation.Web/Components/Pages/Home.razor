@@ -1,0 +1,39 @@
+@page "/"
+@inject NavigationManager Nav
+
+<PageTitle>Doc Automation</PageTitle>
+
+<RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1">Doc Automation Portal</RadzenText>
+<RadzenText TextStyle="TextStyle.Body1" Class="rz-mb-6">
+    Portal de gobierno y generación de MVPs de pases a producción.
+</RadzenText>
+
+<RadzenRow Gap="1.5rem">
+    <RadzenColumn Size="12" SizeMD="6">
+        <RadzenCard Variant="Variant.Outlined" class="rz-p-4">
+            <RadzenStack Gap="1rem">
+                <RadzenIcon Icon="rocket_launch" Style="font-size: 2.5rem; color: var(--rz-primary);" />
+                <RadzenText TextStyle="TextStyle.H6">Nuevo Pase</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
+                    Seleccioná un template y generá el MVP para tu pase a producción.
+                </RadzenText>
+                <RadzenButton Text="Comenzar" Icon="add" Click="@(() => Nav.NavigateTo("/deployments/new"))"
+                              ButtonStyle="ButtonStyle.Primary" />
+            </RadzenStack>
+        </RadzenCard>
+    </RadzenColumn>
+
+    <RadzenColumn Size="12" SizeMD="6">
+        <RadzenCard Variant="Variant.Outlined" class="rz-p-4">
+            <RadzenStack Gap="1rem">
+                <RadzenIcon Icon="description" Style="font-size: 2.5rem; color: var(--rz-secondary);" />
+                <RadzenText TextStyle="TextStyle.H6">Administrar Templates</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
+                    Configurá los templates de actividades y sus pasos con descripciones ricas.
+                </RadzenText>
+                <RadzenButton Text="Ir a Templates" Icon="settings" Click="@(() => Nav.NavigateTo("/admin/templates"))"
+                              ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" />
+            </RadzenStack>
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>

@@ -1,0 +1,108 @@
+@namespace DocAutomation.Web.Components.Shared
+@using DocAutomation.Web.Services
+@inject RecentActionsService RecentActions
+@inject NavigationManager Nav
+@implements IDisposable
+
+<div class="da-recent-actions-menu">
+    <RadzenButton Icon="notifications" Variant="Variant.Text" ButtonStyle="ButtonStyle.Light"
+                  Click="@(() => _open = !_open)" title="Acciones recientes" />
+    @if (RecentActions.Actions.Count > 0)
+    {
+        <span class="da-recent-actions-badge">@RecentActions.Actions.Count</span>
+    }
+
+    @if (_open)
+    {
+        <div class="da-recent-actions-dropdown">
+            <div class="da-recent-actions-header">
+                <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">Acciones recientes</RadzenText>
+                @if (RecentActions.Actions.Count > 0)
+                {
+                    <RadzenButton Text="Limpiar" Variant="Variant.Text" Size="ButtonSize.Small"
+                                  ButtonStyle="ButtonStyle.Light" Click="ClearAsync" />
+                }
+            </div>
+
+            @if (RecentActions.Actions.Count == 0)
+            {
+                <div class="da-recent-actions-empty">
+                    <RadzenIcon Icon="inbox" Style="font-size: 2rem; opacity: 0.3;" />
+                    <RadzenText TextStyle="TextStyle.Caption">Sin actividad reciente</RadzenText>
+                </div>
+            }
+            else
+            {
+                <div class="da-recent-actions-list">
+                    @foreach (var action in RecentActions.Actions)
+                    {
+                        <div class="da-recent-action-item da-recent-action-@action.Severity.ToString().ToLowerInvariant()"
+                             @onclick="@(() => OnItemClick(action))">
+                            <div class="da-recent-action-icon">
+                                <RadzenIcon Icon="@GetIcon(action.Severity)" />
+                            </div>
+                            <div class="da-recent-action-body">
+                                <div class="da-recent-action-title">@action.Title</div>
+                                @if (!string.IsNullOrWhiteSpace(action.Detail))
+                                {
+                                    <div class="da-recent-action-detail">@action.Detail</div>
+                                }
+                                <div class="da-recent-action-time">@FormatTime(action.Timestamp)</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private bool _open;
+
+    protected override async Task OnInitializedAsync()
+    {
+        RecentActions.ActionsChanged += OnActionsChanged;
+        await RecentActions.InitializeAsync();
+    }
+
+    private void OnActionsChanged() => InvokeAsync(StateHasChanged);
+
+    private async Task ClearAsync()
+    {
+        await RecentActions.ClearAsync();
+    }
+
+    private void OnItemClick(RecentAction action)
+    {
+        if (!string.IsNullOrWhiteSpace(action.Href))
+        {
+            _open = false;
+            Nav.NavigateTo(action.Href);
+        }
+    }
+
+    private static string GetIcon(RecentActionSeverity sev) => sev switch
+    {
+        RecentActionSeverity.Success => "check_circle",
+        RecentActionSeverity.Warning => "warning",
+        RecentActionSeverity.Error => "error",
+        _ => "info"
+    };
+
+    private static string FormatTime(DateTime utc)
+    {
+        var local = utc.ToLocalTime();
+        var delta = DateTime.Now - local;
+        if (delta.TotalMinutes < 1) return "hace instantes";
+        if (delta.TotalMinutes < 60) return $"hace {(int)delta.TotalMinutes} min";
+        if (delta.TotalHours < 24) return $"hace {(int)delta.TotalHours} h";
+        if (delta.TotalDays < 7) return $"hace {(int)delta.TotalDays} d";
+        return local.ToString("yyyy-MM-dd HH:mm");
+    }
+
+    public void Dispose()
+    {
+        RecentActions.ActionsChanged -= OnActionsChanged;
+    }
+}

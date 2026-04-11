@@ -1,0 +1,141 @@
+@page "/admin/templates"
+@using DocAutomation.Application.Features.Templates.Models
+@using DocAutomation.Application.Features.Templates.Commands.DeleteTemplate
+@using DocAutomation.Application.Features.Templates.Queries.GetAllTemplates
+@using DocAutomation.Application.Common.Cqrs
+@inject IMediator Mediator
+@inject NavigationManager Nav
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inject KeyboardShortcutService Shortcuts
+@inject RecentActionsService RecentActions
+@implements IDisposable
+
+<PageTitle>Templates</PageTitle>
+
+<PageHeader Title="Templates"
+            Subtitle="Administrá los templates de pases a producción"
+            Breadcrumbs="@(new List<PageHeader.BreadcrumbItem> { new("Administración"), new("Templates") })">
+    <Actions>
+        <RadzenButton Text="Nuevo Template" Icon="add" ButtonStyle="ButtonStyle.Primary"
+                      Click="@(() => Nav.NavigateTo("/admin/templates/create"))" />
+    </Actions>
+</PageHeader>
+
+<RadzenCard Variant="Variant.Outlined" Class="rz-p-3 rz-mb-3">
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem">
+        <RadzenIcon Icon="search" />
+        <RadzenTextBox @bind-Value="_searchTerm" @bind-Value:after="StateHasChanged"
+                       Placeholder="Buscar por nombre, slug o descripción... (Ctrl+K)"
+                       Style="flex: 1; border: none; outline: none; background: transparent;" @ref="_searchBox" />
+        @if (!string.IsNullOrWhiteSpace(_searchTerm))
+        {
+            <RadzenButton Icon="close" Variant="Variant.Text" Size="ButtonSize.Small"
+                          Click="@(() => { _searchTerm = string.Empty; })" />
+        }
+    </RadzenStack>
+</RadzenCard>
+
+@if (_loading)
+{
+    <LoadingSkeleton Type="LoadingSkeleton.SkeletonType.Table" Rows="6" Columns="6" />
+}
+else
+{
+    <RadzenDataGrid Data="@FilteredTemplates" TItem="TemplateListItemDto"
+                    AllowPaging="true" PageSize="20" AllowSorting="true" AllowFiltering="true"
+                    Density="Density.Compact">
+        <Columns>
+            <RadzenDataGridColumn TItem="TemplateListItemDto" Property="Name" Title="Nombre" />
+            <RadzenDataGridColumn TItem="TemplateListItemDto" Property="Slug" Title="Slug" />
+            <RadzenDataGridColumn TItem="TemplateListItemDto" Property="Version" Title="Versión" Width="100px" />
+            <RadzenDataGridColumn TItem="TemplateListItemDto" Property="InputsCount" Title="Variables" Width="120px" />
+            <RadzenDataGridColumn TItem="TemplateListItemDto" Property="UpdatedAt" Title="Actualizado" FormatString="{0:yyyy-MM-dd HH:mm}" Width="170px" />
+            <RadzenDataGridColumn TItem="TemplateListItemDto" Title="Acciones" Width="160px" Sortable="false" Filterable="false">
+                <Template Context="item">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.25rem">
+                        <RadzenButton Icon="visibility" Variant="Variant.Text" Size="ButtonSize.Small"
+                                      Click="@(() => Nav.NavigateTo($"/admin/templates/preview/{item.Id}"))" />
+                        <RadzenButton Icon="edit" Variant="Variant.Text" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small"
+                                      Click="@(() => Nav.NavigateTo($"/admin/templates/edit/{item.Id}"))" />
+                        <RadzenButton Icon="delete" Variant="Variant.Text" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small"
+                                      Click="@(() => DeleteAsync(item))" />
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+        <EmptyTemplate>
+            <RadzenText Class="rz-p-4">
+                @(string.IsNullOrWhiteSpace(_searchTerm) ? "No hay templates todavía. Creá el primero." : "Sin resultados para la búsqueda.")
+            </RadzenText>
+        </EmptyTemplate>
+    </RadzenDataGrid>
+}
+
+@code {
+    private IReadOnlyList<TemplateListItemDto> _templates = Array.Empty<TemplateListItemDto>();
+    private bool _loading = true;
+    private string _searchTerm = string.Empty;
+    private RadzenTextBox _searchBox = null!;
+
+    private IEnumerable<TemplateListItemDto> FilteredTemplates =>
+        string.IsNullOrWhiteSpace(_searchTerm)
+            ? _templates
+            : _templates.Where(t =>
+                t.Name.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                t.Slug.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                (t.Description ?? "").Contains(_searchTerm, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        Shortcuts.ShortcutTriggered += OnShortcutAsync;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _templates = await Mediator.Send(new GetAllTemplatesQuery());
+        _loading = false;
+    }
+
+    private Task OnShortcutAsync(string key)
+    {
+        if (key == "ctrl+k" && _searchBox?.Element is not null)
+        {
+            return InvokeAsync(async () => await _searchBox.Element.FocusAsync());
+        }
+        return Task.CompletedTask;
+    }
+
+    private async Task DeleteAsync(TemplateListItemDto item)
+    {
+        var confirmed = await DialogService.OpenAsync<ConfirmDialog>("Confirmar eliminación",
+            new Dictionary<string, object?>
+            {
+                { "ContentText", $"¿Eliminar el template \"{item.Name}\"? Esta acción lo desactiva (soft delete)." },
+                { "ButtonText", "Eliminar" },
+                { "Style", ButtonStyle.Danger }
+            });
+
+        if (confirmed is not true) return;
+
+        var ok = await Mediator.Send(new DeleteTemplateCommand(item.Id));
+        if (ok)
+        {
+            NotificationService.Notify(NotificationSeverity.Success, "Template eliminado.");
+            await RecentActions.LogAsync($"Template eliminado: {item.Name}",
+                severity: RecentActionSeverity.Warning);
+            await LoadAsync();
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "No se pudo eliminar el template.");
+        }
+    }
+
+    public void Dispose()
+    {
+        Shortcuts.ShortcutTriggered -= OnShortcutAsync;
+    }
+}

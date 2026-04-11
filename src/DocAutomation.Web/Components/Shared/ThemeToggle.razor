@@ -1,0 +1,26 @@
+@namespace DocAutomation.Web.Components.Shared
+@using DocAutomation.Web.Services
+@inject ThemeService Theme
+@implements IDisposable
+
+<RadzenButton Icon="@(Theme.IsDark ? "light_mode" : "dark_mode")"
+              Variant="Variant.Text"
+              ButtonStyle="ButtonStyle.Light"
+              Click="ToggleAsync"
+              title="@(Theme.IsDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro")" />
+
+@code {
+    protected override void OnInitialized()
+    {
+        Theme.ThemeChanged += OnThemeChanged;
+    }
+
+    private void OnThemeChanged() => InvokeAsync(StateHasChanged);
+
+    private Task ToggleAsync() => Theme.ToggleAsync();
+
+    public void Dispose()
+    {
+        Theme.ThemeChanged -= OnThemeChanged;
+    }
+}

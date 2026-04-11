@@ -1,0 +1,41 @@
+version: 2
+updates:
+  - package-ecosystem: 'nuget'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'America/Lima'
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'nuget'
+    groups:
+      aspnetcore:
+        patterns:
+          - 'Microsoft.AspNetCore.*'
+          - 'Microsoft.Extensions.*'
+      entityframeworkcore:
+        patterns:
+          - 'Microsoft.EntityFrameworkCore.*'
+      aspire:
+        patterns:
+          - 'Aspire.*'
+      radzen:
+        patterns:
+          - 'Radzen.*'
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    commit-message:
+      prefix: 'chore(ci)'
+    labels:
+      - 'dependencies'
+      - 'github-actions'

@@ -1,0 +1,64 @@
+@inherits LayoutComponentBase
+@inject ThemeService Theme
+@inject KeyboardShortcutService Shortcuts
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<RadzenComponents />
+
+<RadzenLayout>
+    <RadzenHeader>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center"
+                     Gap="0" Class="rz-px-3 rz-py-2">
+            <RadzenSidebarToggle Click="@(() => _sidebarExpanded = !_sidebarExpanded)" />
+            <RadzenLabel Text="Doc Automation" Style="font-size: 1.25rem; font-weight: 600; margin-left: 1rem;" />
+            <div style="flex: 1;"></div>
+            <RadzenLabel Text="Portal de Pases a Producción" Style="opacity: 0.7; margin-right: 1rem; font-size: 0.875rem;" />
+            <RecentActionsMenu />
+            <ThemeToggle />
+        </RadzenStack>
+    </RadzenHeader>
+
+    <RadzenSidebar @bind-Expanded="_sidebarExpanded" Style="width: 280px;">
+        <NavMenu />
+    </RadzenSidebar>
+
+    <RadzenBody>
+        <div class="rz-p-6">
+            @Body
+        </div>
+    </RadzenBody>
+</RadzenLayout>
+
+@code {
+    private bool _sidebarExpanded = true;
+    private DotNetObjectReference<MainLayout>? _dotNetRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // Sincronizar el theme desde localStorage
+        await Theme.InitializeAsync();
+
+        // Registrar listener global de atajos
+        _dotNetRef = DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("uxPolish.registerKeyboard", _dotNetRef);
+    }
+
+    [JSInvokable]
+    public async Task OnKeyboardShortcut(string key)
+    {
+        await Shortcuts.TriggerAsync(key);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("uxPolish.unregisterKeyboard");
+        }
+        catch (JSDisconnectedException) { }
+        _dotNetRef?.Dispose();
+    }
+}

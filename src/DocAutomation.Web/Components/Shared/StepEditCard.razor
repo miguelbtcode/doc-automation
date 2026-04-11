@@ -1,0 +1,161 @@
+@namespace DocAutomation.Web.Components.Shared
+@using DocAutomation.Domain.Enums
+
+<RadzenCard Variant="Variant.Outlined" Class="rz-mb-4" Style="@CardStyle">
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" Gap="1rem">
+        <RadzenBadge BadgeStyle="@NumberBadgeStyle" Text="@Position.ToString()"
+                     Style="min-width: 44px; height: 44px; font-size: 1.25rem; display: flex; align-items: center; justify-content: center;" />
+
+        <div style="flex-grow: 1;">
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12" SizeMD="8">
+                    <RadzenFormField Text="Título del paso" Variant="Variant.Outlined" Style="width: 100%;">
+                        <RadzenTextBox @bind-Value="Step.Title" MaxLength="200" />
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenFormField Text="Tipo" Variant="Variant.Outlined" Style="width: 100%;">
+                        <RadzenDropDown @bind-Value="Step.Type" Data="@StepTypes" TextProperty="Label" ValueProperty="Value" />
+                    </RadzenFormField>
+                </RadzenColumn>
+
+                <RadzenColumn Size="12">
+                    <RadzenText TextStyle="TextStyle.Caption" Class="rz-mb-1">
+                        Descripción detallada <span style="color: var(--rz-danger);">*</span>
+                    </RadzenText>
+                    <RadzenHtmlEditor @bind-Value="Step.Description" style="height: 340px;" UploadUrl="upload/image">
+                        <RadzenHtmlEditorUndo />
+                        <RadzenHtmlEditorRedo />
+                        <RadzenHtmlEditorSeparator />
+                        <RadzenHtmlEditorBold />
+                        <RadzenHtmlEditorItalic />
+                        <RadzenHtmlEditorUnderline />
+                        <RadzenHtmlEditorStrikeThrough />
+                        <RadzenHtmlEditorSeparator />
+                        <RadzenHtmlEditorColor />
+                        <RadzenHtmlEditorBackground />
+                        <RadzenHtmlEditorRemoveFormat />
+                        <RadzenHtmlEditorSeparator />
+                        <RadzenHtmlEditorFontName />
+                        <RadzenHtmlEditorFontSize />
+                        <RadzenHtmlEditorFormatBlock />
+                        <RadzenHtmlEditorSeparator />
+                        <RadzenHtmlEditorAlignLeft />
+                        <RadzenHtmlEditorAlignCenter />
+                        <RadzenHtmlEditorAlignRight />
+                        <RadzenHtmlEditorJustify />
+                        <RadzenHtmlEditorSeparator />
+                        <RadzenHtmlEditorIndent />
+                        <RadzenHtmlEditorOutdent />
+                        <RadzenHtmlEditorUnorderedList />
+                        <RadzenHtmlEditorOrderedList />
+                        <RadzenHtmlEditorSeparator />
+                        <RadzenHtmlEditorSubscript />
+                        <RadzenHtmlEditorSuperscript />
+                        <RadzenHtmlEditorSeparator />
+                        <RadzenHtmlEditorLink />
+                        <RadzenHtmlEditorUnlink />
+                        <RadzenHtmlEditorImage />
+                        <RadzenHtmlEditorSeparator />
+                        <RadzenHtmlEditorSource />
+                    </RadzenHtmlEditor>
+                </RadzenColumn>
+            </RadzenRow>
+
+            @if (Step.Type == StepType.Verification)
+            {
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Class="rz-mt-6 rz-mb-2">
+                    <RadzenIcon Icon="subdirectory_arrow_right" Style="color: var(--rz-warning);" />
+                    <RadzenText TextStyle="TextStyle.Subtitle2">Acciones correctivas (si la verificación falla)</RadzenText>
+                </RadzenStack>
+
+                var onFailIdx = 0;
+                @foreach (var subStep in Step.OnFailSteps.ToList())
+                {
+                    onFailIdx++;
+                    var captured = subStep;
+                    var capturedIdx = onFailIdx;
+                    <RadzenCard Variant="Variant.Flat" Class="rz-mb-2"
+                                Style="background: #fff8e1; border-left: 3px solid #ff9800;">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" Gap="0.75rem">
+                            <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 600; min-width: 50px;">
+                                @Position.@capturedIdx
+                            </RadzenText>
+                            <div style="flex-grow: 1;">
+                                <RadzenFormField Text="Título de la acción correctiva" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <RadzenTextBox @bind-Value="captured.Title" />
+                                </RadzenFormField>
+                                <div class="rz-mt-2">
+                                    <RadzenHtmlEditor @bind-Value="captured.Description" style="height: 220px;">
+                                        <RadzenHtmlEditorUndo />
+                                        <RadzenHtmlEditorRedo />
+                                        <RadzenHtmlEditorSeparator />
+                                        <RadzenHtmlEditorBold />
+                                        <RadzenHtmlEditorItalic />
+                                        <RadzenHtmlEditorUnderline />
+                                        <RadzenHtmlEditorSeparator />
+                                        <RadzenHtmlEditorColor />
+                                        <RadzenHtmlEditorBackground />
+                                        <RadzenHtmlEditorFormatBlock />
+                                        <RadzenHtmlEditorSeparator />
+                                        <RadzenHtmlEditorUnorderedList />
+                                        <RadzenHtmlEditorOrderedList />
+                                        <RadzenHtmlEditorLink />
+                                        <RadzenHtmlEditorSource />
+                                    </RadzenHtmlEditor>
+                                </div>
+                            </div>
+                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Text"
+                                          Size="ButtonSize.Small" Click="@(() => DeleteSubStep(captured))" />
+                        </RadzenStack>
+                    </RadzenCard>
+                }
+                <RadzenButton Text="Agregar acción correctiva" Icon="add" ButtonStyle="ButtonStyle.Warning"
+                              Variant="Variant.Text" Size="ButtonSize.Small" Click="AddSubStep" />
+            }
+        </div>
+
+        <RadzenStack Gap="0.25rem">
+            <RadzenButton Icon="keyboard_arrow_up" Variant="Variant.Text" Size="ButtonSize.Small"
+                          Disabled="@(Position == 1)" Click="OnMoveUp" />
+            <RadzenButton Icon="keyboard_arrow_down" Variant="Variant.Text" Size="ButtonSize.Small"
+                          Disabled="@(Position == TotalCount)" Click="OnMoveDown" />
+            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Text"
+                          Size="ButtonSize.Small" Click="OnDelete" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenCard>
+
+@code {
+    [Parameter, EditorRequired] public StepEditModel Step { get; set; } = null!;
+    [Parameter] public int Position { get; set; }
+    [Parameter] public int TotalCount { get; set; }
+    [Parameter] public bool AllowVerification { get; set; } = true;
+    [Parameter] public EventCallback OnMoveUp { get; set; }
+    [Parameter] public EventCallback OnMoveDown { get; set; }
+    [Parameter] public EventCallback OnDelete { get; set; }
+
+    private List<StepTypeOption> StepTypes => AllowVerification
+        ? new() { new("Acción", StepType.Action), new("Verificación", StepType.Verification) }
+        : new() { new("Acción", StepType.Action) };
+
+    private record StepTypeOption(string Label, StepType Value);
+
+    private string CardStyle => Step.Type == StepType.Verification
+        ? "border-left: 4px solid #ff9800;"
+        : "border-left: 4px solid var(--rz-primary);";
+
+    private BadgeStyle NumberBadgeStyle => Step.Type == StepType.Verification
+        ? BadgeStyle.Warning
+        : BadgeStyle.Primary;
+
+    private void AddSubStep()
+    {
+        Step.OnFailSteps.Add(new StepEditModel { Type = StepType.Action });
+    }
+
+    private void DeleteSubStep(StepEditModel subStep)
+    {
+        Step.OnFailSteps.Remove(subStep);
+    }
+}

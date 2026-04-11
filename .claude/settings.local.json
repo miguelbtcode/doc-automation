@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__plugin_engram_engram__mem_search",
+      "Bash(dotnet new:*)",
+      "Bash(dotnet tool:*)",
+      "Bash(dotnet ef:*)",
+      "Bash(dotnet add:*)",
+      "Bash(dotnet sln:*)",
+      "Bash(dotnet build:*)",
+      "mcp__plugin_engram_engram__mem_save",
+      "Bash(rm -f src/DocAutomation.Domain/Entities/JiraSettings.cs src/DocAutomation.Infrastructure/Persistence/Configurations/JiraSettingsConfiguration.cs src/DocAutomation.Infrastructure/Persistence/Repositories/JiraSettingsRepository.cs src/DocAutomation.Infrastructure/ExternalServices/JiraService.cs src/DocAutomation.Infrastructure/ExternalServices/AdfBuilder.cs src/DocAutomation.Application/Interfaces/IJiraService.cs src/DocAutomation.Application/Interfaces/IJiraSettingsRepository.cs src/DocAutomation.Application/DTOs/JiraSettingsDto.cs)",
+      "Bash(rm -rf src/DocAutomation.Application/Jira src/DocAutomation.Application/Deployments/Commands/CreateJiraTicket src/DocAutomation.Web/Components/Pages/Admin/Jira)",
+      "Bash(rmdir src/DocAutomation.Infrastructure/ExternalServices)",
+      "Bash(dotnet remove:*)",
+      "Bash(mkdir -p Features Models)",
+      "Bash(mv Templates Features/Templates)",
+      "Bash(mv Deployments Features/Deployments)",
+      "Bash(find Features/Templates -name '*.cs' -exec sed -i '' -e 's|namespace DocAutomation\\\\.Application\\\\.Templates\\\\.|namespace DocAutomation.Application.Features.Templates.|g' '{}' ';')",
+      "Bash(find Features/Deployments -name '*.cs' -exec sed -i '' -e 's|namespace DocAutomation\\\\.Application\\\\.Deployments\\\\.|namespace DocAutomation.Application.Features.Deployments.|g' '{}' ';')",
+      "Bash(xargs -0 sed -i '' -e 's|DocAutomation\\\\.Application\\\\.Templates\\\\.Commands|DocAutomation.Application.Features.Templates.Commands|g' -e 's|DocAutomation\\\\.Application\\\\.Templates\\\\.Queries|DocAutomation.Application.Features.Templates.Queries|g' -e 's|DocAutomation\\\\.Application\\\\.Templates\\\\.Models|DocAutomation.Application.Features.Templates.Models|g' -e 's|DocAutomation\\\\.Application\\\\.Deployments\\\\.Commands|DocAutomation.Application.Features.Deployments.Commands|g' -e 's|DocAutomation\\\\.Application\\\\.Deployments\\\\.Queries|DocAutomation.Application.Features.Deployments.Queries|g')"
+    ]
+  }
+}

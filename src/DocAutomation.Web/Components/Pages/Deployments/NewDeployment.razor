@@ -1,0 +1,184 @@
+@page "/deployments/new"
+@using DocAutomation.Application.Features.Deployments.Commands.StartDeployment
+@using DocAutomation.Application.Features.Templates.Models
+@using DocAutomation.Application.Features.Deployments.Models
+@using DocAutomation.Application.Features.Templates.Queries.GetAllTemplates
+@using DocAutomation.Application.Features.Templates.Queries.GetTemplateById
+@using DocAutomation.Domain.Enums
+@using DocAutomation.Application.Common.Cqrs
+@inject IMediator Mediator
+@inject NavigationManager Nav
+@inject NotificationService NotificationService
+@inject RecentActionsService RecentActions
+
+<PageTitle>Nuevo Pase</PageTitle>
+
+<PageHeader Title="Nuevo Pase a Producción"
+            Subtitle="Seleccioná un template y completá los datos para generar el MVP"
+            BackPath="/"
+            Breadcrumbs="@(new List<PageHeader.BreadcrumbItem> { new("Pases", "/deployments/history"), new("Nuevo") })" />
+
+<RadzenCard Variant="Variant.Outlined" Class="rz-p-6 rz-mb-4">
+    <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-3">1. Seleccionar Template</RadzenText>
+    <RadzenDropDown TValue="Guid?" Value="@_selectedTemplateId" Data="@_templates"
+                    TextProperty="Name" ValueProperty="Id"
+                    Placeholder="Elegí un tipo de actividad..." Style="width: 100%;"
+                    Change="@(async (object v) => await OnTemplateSelected((Guid?)v))" />
+</RadzenCard>
+
+@if (_loadingTemplate)
+{
+    <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+}
+else if (_selectedTemplate is not null)
+{
+    <RadzenCard Variant="Variant.Outlined" Class="rz-p-6 rz-mb-4">
+        <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-1">2. Completar Datos del Pase</RadzenText>
+        <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-4" Style="color: var(--rz-text-secondary-color);">
+            Estos valores serán sustituidos en las descripciones de los pasos del template.
+        </RadzenText>
+
+        <RadzenRow Gap="1rem">
+            @foreach (var input in _selectedTemplate.Inputs.OrderBy(i => i.DisplayOrder))
+            {
+                <RadzenColumn Size="12" SizeMD="6">
+                    @RenderInput(input)
+                    @if (!string.IsNullOrWhiteSpace(input.HelpText))
+                    {
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                            @input.HelpText
+                        </RadzenText>
+                    }
+                </RadzenColumn>
+            }
+        </RadzenRow>
+    </RadzenCard>
+
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+        <RadzenButton Text="Cancelar" Variant="Variant.Flat" ButtonStyle="ButtonStyle.Base"
+                      Click="@(() => Nav.NavigateTo("/"))" />
+        <RadzenButton Text="@(_starting ? "Generando..." : "Generar MVP")" Icon="play_arrow"
+                      ButtonStyle="ButtonStyle.Primary" Disabled="_starting" Click="StartAsync" />
+    </RadzenStack>
+}
+
+@code {
+    private IReadOnlyList<TemplateListItemDto> _templates = Array.Empty<TemplateListItemDto>();
+    private Guid? _selectedTemplateId;
+    private TemplateDto? _selectedTemplate;
+    private Dictionary<string, string> _values = new();
+    private bool _loadingTemplate;
+    private bool _starting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _templates = await Mediator.Send(new GetAllTemplatesQuery());
+    }
+
+    private async Task OnTemplateSelected(Guid? templateId)
+    {
+        _selectedTemplateId = templateId;
+        _selectedTemplate = null;
+        _values.Clear();
+
+        if (templateId is null) return;
+
+        _loadingTemplate = true;
+        _selectedTemplate = await Mediator.Send(new GetTemplateByIdQuery(templateId.Value));
+        if (_selectedTemplate is not null)
+        {
+            foreach (var input in _selectedTemplate.Inputs)
+                _values[input.Key] = input.DefaultValue ?? string.Empty;
+        }
+        _loadingTemplate = false;
+    }
+
+    private RenderFragment RenderInput(TemplateInputDto input) => builder =>
+    {
+        var seq = 0;
+        builder.OpenComponent<RadzenFormField>(seq++);
+        builder.AddAttribute(seq++, "Text", input.Label + (input.IsRequired ? " *" : ""));
+        builder.AddAttribute(seq++, "Variant", Variant.Outlined);
+        builder.AddAttribute(seq++, "Style", "width: 100%;");
+        builder.AddAttribute(seq++, "ChildContent", (RenderFragment)(f =>
+        {
+            var fs = 0;
+            switch (input.InputType)
+            {
+                case InputType.Boolean:
+                    f.OpenComponent<RadzenCheckBox<bool>>(fs++);
+                    f.AddAttribute(fs++, "Value", _values.GetValueOrDefault(input.Key) == "true");
+                    f.AddAttribute(fs++, "Change",
+                        EventCallback.Factory.Create<bool>(this, v => _values[input.Key] = v.ToString().ToLowerInvariant()));
+                    f.CloseComponent();
+                    break;
+
+                case InputType.Number:
+                    f.OpenComponent<RadzenNumeric<decimal>>(fs++);
+                    f.AddAttribute(fs++, "Value",
+                        decimal.TryParse(_values.GetValueOrDefault(input.Key), out var n) ? n : 0m);
+                    f.AddAttribute(fs++, "Change",
+                        EventCallback.Factory.Create<decimal>(this, v => _values[input.Key] = v.ToString()));
+                    f.CloseComponent();
+                    break;
+
+                case InputType.Date:
+                    f.OpenComponent<RadzenDatePicker<DateTime?>>(fs++);
+                    f.AddAttribute(fs++, "Value",
+                        DateTime.TryParse(_values.GetValueOrDefault(input.Key), out var d) ? (DateTime?)d : null);
+                    f.AddAttribute(fs++, "Change",
+                        EventCallback.Factory.Create<DateTime?>(this, v => _values[input.Key] = v?.ToString("yyyy-MM-dd") ?? ""));
+                    f.CloseComponent();
+                    break;
+
+                default:
+                    f.OpenComponent<RadzenTextBox>(fs++);
+                    f.AddAttribute(fs++, "Value", _values.GetValueOrDefault(input.Key) ?? "");
+                    f.AddAttribute(fs++, "Change",
+                        EventCallback.Factory.Create<string>(this, v => _values[input.Key] = v ?? ""));
+                    f.CloseComponent();
+                    break;
+            }
+        }));
+        builder.CloseComponent();
+    };
+
+    private async Task StartAsync()
+    {
+        if (_selectedTemplate is null) return;
+
+        foreach (var input in _selectedTemplate.Inputs.Where(i => i.IsRequired))
+        {
+            if (string.IsNullOrWhiteSpace(_values.GetValueOrDefault(input.Key)))
+            {
+                NotificationService.Notify(NotificationSeverity.Warning,
+                    "Campos incompletos", $"El campo '{input.Label}' es requerido.");
+                return;
+            }
+        }
+
+        _starting = true;
+        try
+        {
+            var id = await Mediator.Send(new StartDeploymentCommand(
+                _selectedTemplate.Id,
+                _values,
+                "operator"));
+
+            NotificationService.Notify(NotificationSeverity.Success, "MVP generado correctamente.");
+            await RecentActions.LogAsync($"MVP generado: {_selectedTemplate.Name}",
+                detail: _values.GetValueOrDefault("ticket_jira") ?? _selectedTemplate.Slug,
+                severity: RecentActionSeverity.Success,
+                href: $"/deployments/{id}");
+            Nav.NavigateTo($"/deployments/{id}");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+        }
+        finally
+        {
+            _starting = false;
+        }
+    }
+}

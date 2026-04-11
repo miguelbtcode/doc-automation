@@ -1,0 +1,51 @@
+@namespace DocAutomation.Web.Components.Shared
+
+@if (Type == SkeletonType.Table)
+{
+    <div class="da-skeleton-table">
+        @for (var i = 0; i < Rows; i++)
+        {
+            <div class="da-skeleton-row">
+                @for (var j = 0; j < Columns; j++)
+                {
+                    <div class="da-skeleton da-skeleton-cell"></div>
+                }
+            </div>
+        }
+    </div>
+}
+else if (Type == SkeletonType.Card)
+{
+    <div class="da-skeleton-card-wrapper">
+        <div class="da-skeleton da-skeleton-title"></div>
+        <div class="da-skeleton da-skeleton-text"></div>
+        <div class="da-skeleton da-skeleton-text" style="width: 80%;"></div>
+        <div class="da-skeleton da-skeleton-text" style="width: 60%;"></div>
+    </div>
+}
+else if (Type == SkeletonType.Form)
+{
+    <div class="da-skeleton-form">
+        @for (var i = 0; i < Rows; i++)
+        {
+            <div class="da-skeleton-form-field">
+                <div class="da-skeleton da-skeleton-label"></div>
+                <div class="da-skeleton da-skeleton-input"></div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="da-skeleton" style="width: @Width; height: @Height;"></div>
+}
+
+@code {
+    public enum SkeletonType { Text, Card, Table, Form }
+
+    [Parameter] public SkeletonType Type { get; set; } = SkeletonType.Text;
+    [Parameter] public string Width { get; set; } = "100%";
+    [Parameter] public string Height { get; set; } = "1em";
+    [Parameter] public int Rows { get; set; } = 5;
+    [Parameter] public int Columns { get; set; } = 4;
+}

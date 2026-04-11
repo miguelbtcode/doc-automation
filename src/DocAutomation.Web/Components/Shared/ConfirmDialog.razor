@@ -1,0 +1,18 @@
+@namespace DocAutomation.Web.Components.Shared
+@inject DialogService DialogService
+
+<RadzenStack Gap="1.5rem">
+    <RadzenText TextStyle="TextStyle.Body1">@ContentText</RadzenText>
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+        <RadzenButton Text="Cancelar" Variant="Variant.Flat" ButtonStyle="ButtonStyle.Base"
+                      Click="@(() => DialogService.Close(false))" />
+        <RadzenButton Text="@ButtonText" ButtonStyle="@Style"
+                      Click="@(() => DialogService.Close(true))" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public string ContentText { get; set; } = "¿Confirmar la acción?";
+    [Parameter] public string ButtonText { get; set; } = "Confirmar";
+    [Parameter] public ButtonStyle Style { get; set; } = ButtonStyle.Primary;
+}

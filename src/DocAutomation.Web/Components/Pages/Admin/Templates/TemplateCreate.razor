@@ -1,0 +1,92 @@
+@page "/admin/templates/create"
+@using DocAutomation.Application.Features.Templates.Commands.CreateTemplate
+@using DocAutomation.Application.Common.Cqrs
+@inject IMediator Mediator
+@inject NavigationManager Nav
+@inject NotificationService NotificationService
+@inject KeyboardShortcutService Shortcuts
+@inject UnsavedChangesGuard Guard
+@inject RecentActionsService RecentActions
+@implements IDisposable
+
+<PageTitle>Nuevo Template</PageTitle>
+
+<PageHeader Title="Nuevo Template"
+            BackPath="/admin/templates"
+            Breadcrumbs="@(new List<PageHeader.BreadcrumbItem> { new("Administración"), new("Templates", "/admin/templates"), new("Nuevo") })">
+    <Actions>
+        <RadzenButton Text="Cancelar" Variant="Variant.Flat" ButtonStyle="ButtonStyle.Base"
+                      Click="@(() => Nav.NavigateTo("/admin/templates"))" />
+        <RadzenButton Text="@(_saving ? "Guardando..." : "Crear Template (Ctrl+S)")" Icon="save"
+                      ButtonStyle="ButtonStyle.Primary" Disabled="_saving" Click="SaveAsync" />
+    </Actions>
+</PageHeader>
+
+<RadzenCard Variant="Variant.Outlined" Class="rz-p-6">
+    <TemplateForm @ref="_templateForm" Model="_model" />
+</RadzenCard>
+
+@code {
+    private readonly TemplateFormModel _model = new();
+    private TemplateForm _templateForm = null!;
+    private bool _saving;
+
+    protected override void OnInitialized()
+    {
+        Shortcuts.ShortcutTriggered += OnShortcutAsync;
+    }
+
+    private Task OnShortcutAsync(string key) => key == "ctrl+s" ? SaveAsync() : Task.CompletedTask;
+
+    private async Task SaveAsync()
+    {
+        if (_saving) return;
+        if (!await _templateForm.ValidateAsync())
+        {
+            NotificationService.Notify(NotificationSeverity.Warning,
+                "Completá todos los campos",
+                "Todos los pasos deben tener título y descripción.");
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            var stepsJson = StepsJsonConverter.ToJson(_model.Steps);
+            var id = await Mediator.Send(new CreateTemplateCommand(
+                _model.Slug,
+                _model.Name,
+                _model.Description,
+                stepsJson,
+                _model.Inputs,
+                "admin"));
+
+            await Guard.MarkCleanAsync();
+            NotificationService.Notify(NotificationSeverity.Success, "Template creado correctamente.");
+            await RecentActions.LogAsync($"Template creado: {_model.Name}",
+                detail: _model.Slug,
+                severity: RecentActionSeverity.Success,
+                href: $"/admin/templates/preview/{id}");
+            Nav.NavigateTo($"/admin/templates/preview/{id}");
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            foreach (var err in ex.Errors)
+                NotificationService.Notify(NotificationSeverity.Error, err.ErrorMessage);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        Shortcuts.ShortcutTriggered -= OnShortcutAsync;
+        _ = Guard.MarkCleanAsync();
+    }
+}
