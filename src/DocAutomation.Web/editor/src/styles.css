@@ -77,6 +77,111 @@ html[data-theme="dark"] .da-toolbar-btn.da-toolbar-active {
     color: #85B8FF;
 }
 
+/* Toolbar Panel Dropdown */
+.da-toolbar-panel-dropdown-wrapper {
+    position: relative;
+}
+
+.da-toolbar-panel-btn {
+    width: auto;
+    padding: 0 8px;
+    gap: 4px;
+}
+
+.da-toolbar-panel-btn::after {
+    content: '▾';
+    font-size: 10px;
+    opacity: 0.7;
+    margin-left: 2px;
+}
+
+.da-toolbar-panel-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    margin-right: 0;
+    background: #FFFFFF;
+    border: 1px solid #DFE1E6;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(9, 30, 66, 0.15);
+    padding: 4px;
+    z-index: 1000;
+    /* Columna vertical compacta */
+    min-width: auto;
+    width: auto;
+}
+
+.da-toolbar-panel-menu.da-toolbar-panel-menu-open {
+    display: flex;
+    flex-direction: column;
+}
+
+.da-toolbar-panel-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100%;
+    min-width: 100px;
+    height: 28px;
+    padding: 0 8px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.da-toolbar-panel-item:hover {
+    background: #EBECF0;
+}
+
+.da-toolbar-panel-item svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.da-panel-item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+}
+
+.da-panel-item-label {
+    font-size: 12px;
+    color: #42526E;
+    white-space: nowrap;
+}
+
+html[data-theme="dark"] .da-panel-item-label {
+    color: #9FADBC;
+}
+
+html[data-theme="dark"] .da-toolbar-panel-menu {
+    background: #22272B;
+    border-color: #38414A;
+}
+
+html[data-theme="dark"] .da-toolbar-panel-item {
+    color: #B6C2CF;
+}
+
+html[data-theme="dark"] .da-toolbar-panel-item:hover {
+    background: #2C333A;
+}
+
+/* Panel colors in dropdown - solo el icono toma el color */
+.da-toolbar-panel-item.da-panel-info { color: #0747A6; }
+.da-toolbar-panel-item.da-panel-note { color: #403294; }
+.da-toolbar-panel-item.da-panel-success { color: #006644; }
+.da-toolbar-panel-item.da-panel-warning { color: #FF8B00; }
+.da-toolbar-panel-item.da-panel-error { color: #BF2600; }
+
 .da-toolbar-separator {
     width: 1px;
     height: 22px;
@@ -128,13 +233,6 @@ html[data-theme="dark"] .da-toolbar-select:hover {
     cursor: pointer;
     border: none;
 }
-
-/* Colores específicos de los botones de panel en el toolbar */
-.da-toolbar-panel-info { color: #0747A6; }
-.da-toolbar-panel-note { color: #403294; }
-.da-toolbar-panel-success { color: #006644; }
-.da-toolbar-panel-warning { color: #FF8B00; }
-.da-toolbar-panel-error { color: #BF2600; }
 
 /* ============= Content area ============= */
 .da-editor-content {
@@ -386,7 +484,7 @@ html[data-theme="dark"] .da-editor-content .da-panel-error {
 .da-bubble-menu {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
     padding: 4px 6px;
     background: #FFFFFF;
     border: 1px solid #DFE1E6;
@@ -450,6 +548,149 @@ html[data-theme="dark"] .da-bubble-btn:hover {
 html[data-theme="dark"] .da-bubble-separator {
     background: #38414A;
 }
+
+/* Dropdown para cambiar tipo de panel (estilo Jira) */
+.da-bubble-dropdown-wrapper {
+    position: relative;
+}
+
+.da-bubble-dropdown-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #42526E;
+    white-space: nowrap;
+    transition: background 0.12s, border-color 0.12s;
+}
+
+.da-bubble-dropdown-btn:hover {
+    background: #EBECF0;
+    border-color: #DFE1E6;
+}
+
+.da-bubble-dropdown-current {
+    font-weight: 500;
+}
+
+.da-bubble-dropdown-arrow {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+/* Botón de tipo de panel en el bubble menu */
+.da-panel-type-btn {
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    border-radius: 4px;
+}
+
+.da-panel-type-btn:hover {
+    background: #EBECF0;
+}
+
+.da-panel-type-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.da-panel-type-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.da-bubble-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    min-width: 180px;
+    background: #FFFFFF;
+    border: 1px solid #DFE1E6;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(9, 30, 66, 0.15);
+    padding: 4px;
+    z-index: 1000;
+}
+
+.da-bubble-dropdown-menu.da-bubble-dropdown-open {
+    display: block;
+}
+
+.da-bubble-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #172B4D;
+    text-align: left;
+    transition: background 0.12s;
+}
+
+.da-bubble-dropdown-item:hover {
+    background: #EBECF0;
+}
+
+.da-bubble-dropdown-item.da-bubble-info { color: #0747A6; }
+.da-bubble-dropdown-item.da-bubble-note { color: #403294; }
+.da-bubble-dropdown-item.da-bubble-success { color: #006644; }
+.da-bubble-dropdown-item.da-bubble-warning { color: #FF8B00; }
+.da-bubble-dropdown-item.da-bubble-error { color: #BF2600; }
+
+.da-bubble-dropdown-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+}
+
+.da-bubble-dropdown-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+html[data-theme="dark"] .da-bubble-dropdown-btn {
+    color: #9FADBC;
+}
+
+html[data-theme="dark"] .da-bubble-dropdown-btn:hover {
+    background: #2C333A;
+    border-color: #38414A;
+}
+
+html[data-theme="dark"] .da-bubble-dropdown-menu {
+    background: #22272B;
+    border-color: #38414A;
+}
+
+html[data-theme="dark"] .da-bubble-dropdown-item {
+    color: #B6C2CF;
+}
+
+html[data-theme="dark"] .da-bubble-dropdown-item:hover {
+    background: #2C333A;
+}
+
+html[data-theme="dark"] .da-bubble-dropdown-item.da-bubble-info { color: #85B8FF; }
+html[data-theme="dark"] .da-bubble-dropdown-item.da-bubble-note { color: #B8A9FF; }
+html[data-theme="dark"] .da-bubble-dropdown-item.da-bubble-success { color: #85B8FF; }
+html[data-theme="dark"] .da-bubble-dropdown-item.da-bubble-warning { color: #FFD666; }
+html[data-theme="dark"] .da-bubble-dropdown-item.da-bubble-error { color: #FF8A73; }
 
 /* ============= Slash command menu ============= */
 .da-slash-menu {

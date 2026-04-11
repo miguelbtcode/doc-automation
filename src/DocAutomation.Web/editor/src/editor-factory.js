@@ -1,5 +1,4 @@
-// Editor factory — crea una instancia de Tiptap con todas las extensiones
-// (StarterKit, formato de texto, tablas, paneles Jira, slash commands, bubble menu).
+// Editor factory — crea instancia de Tiptap con todas las extensiones
 
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
@@ -25,7 +24,6 @@ import { buildToolbar } from './toolbar.js';
 import { buildPanelBubbleMenu } from './bubble-menu.js';
 
 export function createEditor({ host, initialContent, onChange, placeholder }) {
-    // Contenedor con toolbar arriba + área editable abajo + bubble menu flotante
     host.classList.add('da-editor');
     host.innerHTML = '';
 
@@ -60,7 +58,7 @@ export function createEditor({ host, initialContent, onChange, placeholder }) {
                 openOnClick: false,
                 HTMLAttributes: { rel: 'noopener', target: '_blank' }
             }),
-            Image.configure({ inline: false, allowBase64: true }),
+            Image.configure({ inline: false }),
             Table.configure({ resizable: true }),
             TableRow,
             TableHeader,
@@ -72,18 +70,29 @@ export function createEditor({ host, initialContent, onChange, placeholder }) {
             SlashCommands,
             BubbleMenu.configure({
                 element: bubbleMenuEl,
-                shouldShow: ({ editor }) => editor.isActive('panel'),
-                tippyOptions: {
-                    placement: 'top',
-                    theme: 'light-border'
-                }
+                shouldShow: ({ editor, state }) => {
+                    const { selection } = state;
+                    const { $from, empty } = selection;
+                    if (empty) return false;
+                    const isPanel = state.doc.resolve($from.pos).parent.type.name === 'panel';
+                    if (isPanel) return true;
+                    return editor.isActive('panel');
+                },
+                tippyOptions: { placement: 'top', theme: 'light-border' }
             })
         ],
         content: initialContent || '',
-        onUpdate: ({ editor }) => {
-            if (onChange) {
-                onChange(editor.getHTML());
-            }
+        onUpdate: ({ editor }) => { if (onChange) onChange(editor.getHTML()); }
+    });
+
+    // Click en wrapper del panel para seleccionarlo
+    editableHost.addEventListener('click', (e) => {
+        const panelWrapper = e.target.closest('.da-panel');
+        if (panelWrapper && !e.target.closest('.da-panel-content *')) {
+            const pos = editor.state.doc.resolve(
+                editor.view.posAtDOM(panelWrapper, 0)
+            );
+            editor.chain().focus().setTextSelection(pos).run();
         }
     });
 

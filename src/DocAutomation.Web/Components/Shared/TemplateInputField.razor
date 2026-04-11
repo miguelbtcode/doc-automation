@@ -5,19 +5,19 @@
 <RadzenFormField Text="@(Input.Label + (Input.IsRequired ? " *" : ""))" Variant="Variant.Outlined" Style="width: 100%;">
     @if (Input.InputType == InputType.Boolean)
     {
-        <RadzenSwitch @bind-Value="_boolValue" />
+        <RadzenSwitch Value="_boolValue" ValueChanged="@(EventCallback.Factory.Create<bool>(this, OnBoolChanged))" />
     }
     else if (Input.InputType == InputType.Number)
     {
-        <RadzenNumeric @bind-Value="_decimalValue" ShowUpDown="false" />
+        <RadzenNumeric Value="_decimalValue" ValueChanged="@(EventCallback.Factory.Create<decimal>(this, OnDecimalChanged))" ShowUpDown="false" />
     }
     else if (Input.InputType == InputType.Date)
     {
-        <RadzenDatePicker @bind-Value="_dateValue" />
+        <RadzenDatePicker Value="_dateValue" ValueChanged="@(EventCallback.Factory.Create<DateTime?>(this, OnDateChanged))" />
     }
     else
     {
-        <RadzenTextBox @bind-Value="_stringValue" />
+        <RadzenTextBox Value="@_stringValue" ValueChanged="@(EventCallback.Factory.Create<string>(this, OnStringChanged))" />
     }
 </RadzenFormField>
 
@@ -33,48 +33,34 @@
 
     protected override void OnParametersSet()
     {
-        _boolValue = Value.Equals("true", StringComparison.OrdinalIgnoreCase);
+        // Always sync from parent when Value changes
+        _boolValue = string.Equals(Value, "true", StringComparison.OrdinalIgnoreCase);
         _decimalValue = decimal.TryParse(Value, out var n) ? n : 0m;
         _dateValue = DateTime.TryParse(Value, out var d) ? d : null;
         _stringValue = Value ?? string.Empty;
     }
 
-    private async Task OnValueChanged()
-    {
-        var stringValue = Input.InputType switch
-        {
-            InputType.Boolean => _boolValue.ToString().ToLowerInvariant(),
-            InputType.Number => _decimalValue.ToString(),
-            InputType.Date => _dateValue?.ToString("yyyy-MM-dd") ?? "",
-            _ => _stringValue ?? ""
-        };
-        
-        if (stringValue != Value)
-            await ValueChanged.InvokeAsync(stringValue);
-    }
-
-    // These are called by the two-way binding
     private async Task OnBoolChanged(bool v)
     {
         _boolValue = v;
-        await OnValueChanged();
+        await ValueChanged.InvokeAsync(v.ToString().ToLowerInvariant());
     }
 
     private async Task OnDecimalChanged(decimal v)
     {
         _decimalValue = v;
-        await OnValueChanged();
+        await ValueChanged.InvokeAsync(v.ToString());
     }
 
     private async Task OnDateChanged(DateTime? v)
     {
         _dateValue = v;
-        await OnValueChanged();
+        await ValueChanged.InvokeAsync(v?.ToString("yyyy-MM-dd") ?? "");
     }
 
     private async Task OnStringChanged(string v)
     {
         _stringValue = v ?? string.Empty;
-        await OnValueChanged();
+        await ValueChanged.InvokeAsync(v ?? "");
     }
 }

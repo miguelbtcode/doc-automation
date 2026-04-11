@@ -4,16 +4,16 @@ Portal web para **gobernar y generar MVPs de pases a producción** a partir de t
 
 ## Stack
 
-| Capa | Tecnología |
-| --- | --- |
-| Frontend + Backend | Blazor Server (.NET 9) |
-| UI | Radzen.Blazor (`standard-base`) |
-| Orquestación dev | .NET Aspire 9.3 |
-| Base de datos | SQL Server 2022 |
-| ORM | Entity Framework Core 9 |
-| CQRS | Mediador propio (sin MediatR) |
-| Validación | FluentValidation |
-| Hosting | IIS / Windows Server |
+| Capa               | Tecnología                      |
+| ------------------ | ------------------------------- |
+| Frontend + Backend | Blazor Server (.NET 9)          |
+| UI                 | Radzen.Blazor (`standard-base`) |
+| Orquestación dev   | .NET Aspire 9.3                 |
+| Base de datos      | SQL Server 2022                 |
+| ORM                | Entity Framework Core 9         |
+| CQRS               | Mediador propio (sin MediatR)   |
+| Validación         | FluentValidation                |
+| Hosting            | IIS / Windows Server            |
 
 ## Estructura
 
@@ -47,11 +47,13 @@ Aspire abre el dashboard en `https://localhost:17xxx`. Al arrancar levanta SQL S
 ## Flujos
 
 **Admin — crear template**
+
 1. `/admin/templates` → Nuevo Template
 2. Definir nombre, slug, variables del formulario y pasos con descripciones HTML ricas
 3. Guardar (`Ctrl+S`)
 
 **Operador — generar MVP**
+
 1. `/deployments/new` → seleccionar template → completar formulario
 2. Generar MVP → copiar como HTML o descargar `.html` → pegar en Jira
 
@@ -70,22 +72,8 @@ dotnet ef migrations add <Nombre> \
 
 ## CI/CD
 
-| Workflow | Trigger | Acción |
-| --- | --- | --- |
-| `ci.yml` | push/PR a `main` y `develop` | Restore, build con `/warnaserror`, test |
-| `publish.yml` | push a `main` o release tag | Publish `win-x64` framework-dependent + zip artifact |
-| `dependabot.yml` | semanal | NuGet (agrupado) y GitHub Actions |
-
-## Roadmap
-
-- [x] CRUD de templates con editor HTML rico (Radzen)
-- [x] Generación de MVP con sustitución de variables
-- [x] Verificaciones con `on_fail` anidadas
-- [x] Mediador propio con `ICommand`/`IQuery`
-- [x] Feature folders por bounded context
-- [x] UX polish: dark mode, breadcrumbs, skeletons, atajos, unsaved guard, recent actions
-- [ ] Autenticación Windows + roles (Admin / Operator / Viewer)
-- [ ] Audit trail
-- [ ] Búsqueda avanzada y categorías de templates
-- [ ] Tests unitarios de handlers, validators y renderer
-- [ ] Export a PDF (QuestPDF) y Word (OpenXML)
+| Workflow         | Trigger                      | Acción                                               |
+| ---------------- | ---------------------------- | ---------------------------------------------------- |
+| `ci.yml`         | push/PR a `main` y `develop` | Restore, build con `/warnaserror`, test              |
+| `publish.yml`    | push a `main` o release tag  | Publish `win-x64` framework-dependent + zip artifact |
+| `dependabot.yml` | semanal                      | NuGet (agrupado) y GitHub Actions                    |

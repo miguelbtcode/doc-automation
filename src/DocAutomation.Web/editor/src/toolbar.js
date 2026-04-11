@@ -1,12 +1,12 @@
-// Toolbar fija arriba del editor — botones agrupados por categoría con separadores.
-// Usa los SVGs reales de @atlaskit/icon (Apache 2.0) para look pixel-perfect con Jira.
+// Toolbar del editor — botones con grupos y separadores
+// Usa SVGs de @atlaskit/icon para look similar a Jira
 
 import { iconHtml } from './icons.js';
 
 const PANEL_TYPES = [
     { key: 'info', icon: 'info', label: 'Info' },
     { key: 'note', icon: 'note', label: 'Note' },
-    { key: 'success', icon: 'success', label: 'Success' },
+    { key: 'success', icon: 'success', label: 'Tip' },
     { key: 'warning', icon: 'warning', label: 'Warning' },
     { key: 'error', icon: 'error', label: 'Error' }
 ];
@@ -14,18 +14,18 @@ const PANEL_TYPES = [
 export function buildToolbar(container, editor) {
     container.innerHTML = '';
 
-    // Grupo: Undo / Redo
+    // Undo / Redo
     addIconButton(container, 'undo', 'undo', 'Deshacer (Ctrl+Z)',
         () => editor.chain().focus().undo().run());
     addIconButton(container, 'redo', 'redo', 'Rehacer (Ctrl+Y)',
         () => editor.chain().focus().redo().run());
     addSeparator(container);
 
-    // Grupo: Headings (dropdown)
+    // Headings dropdown
     addHeadingDropdown(container, editor);
     addSeparator(container);
 
-    // Grupo: Inline formatting
+    // Inline formatting
     addToggleButton(container, 'bold', 'bold', 'Negrita (Ctrl+B)', editor, 'bold',
         () => editor.chain().focus().toggleBold().run());
     addToggleButton(container, 'italic', 'italic', 'Itálica (Ctrl+I)', editor, 'italic',
@@ -38,21 +38,21 @@ export function buildToolbar(container, editor) {
         () => editor.chain().focus().toggleCode().run());
     addSeparator(container);
 
-    // Grupo: Color y highlight
+    // Color y highlight
     addColorPicker(container, editor);
     addHighlightPicker(container, editor);
     addIconButton(container, 'remove-format', 'removeFormatting', 'Quitar formato',
         () => editor.chain().focus().unsetAllMarks().clearNodes().run());
     addSeparator(container);
 
-    // Grupo: Listas
+    // Listas
     addToggleButton(container, 'bullet', 'bulletList', 'Lista con viñetas', editor, 'bulletList',
         () => editor.chain().focus().toggleBulletList().run());
     addToggleButton(container, 'ordered', 'numberList', 'Lista numerada', editor, 'orderedList',
         () => editor.chain().focus().toggleOrderedList().run());
     addSeparator(container);
 
-    // Grupo: Block elements
+    // Bloques
     addToggleButton(container, 'blockquote', 'quote', 'Cita', editor, 'blockquote',
         () => editor.chain().focus().toggleBlockquote().run());
     addToggleButton(container, 'codeblock', 'codeBlock', 'Bloque de código', editor, 'codeBlock',
@@ -61,7 +61,7 @@ export function buildToolbar(container, editor) {
         () => editor.chain().focus().setHorizontalRule().run());
     addSeparator(container);
 
-    // Grupo: Tablas / Link / Image
+    // Tablas / Link / Image
     addIconButton(container, 'table', 'table', 'Insertar tabla 3x3',
         () => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run());
     addIconButton(container, 'link', 'link', 'Agregar link', () => {
@@ -74,13 +74,8 @@ export function buildToolbar(container, editor) {
     });
     addSeparator(container);
 
-    // Grupo: Paneles tipo Jira (5 botones)
-    PANEL_TYPES.forEach(panel => {
-        const btn = addIconButton(container, `panel-${panel.key}`, panel.icon,
-            `Panel ${panel.label}`,
-            () => editor.chain().focus().setPanel(panel.key).run());
-        btn.classList.add(`da-toolbar-panel-${panel.key}`);
-    });
+    // Paneles tipo Jira
+    addPanelDropdown(container, editor);
 }
 
 function addIconButton(container, name, iconName, title, onClick) {
@@ -172,5 +167,51 @@ function addHighlightPicker(container, editor) {
         editor.chain().focus().toggleHighlight({ color: input.value }).run();
     });
     wrapper.appendChild(input);
+    container.appendChild(wrapper);
+}
+
+function addPanelDropdown(container, editor) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'da-toolbar-panel-dropdown-wrapper';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'da-toolbar-btn da-toolbar-panel-btn';
+    btn.title = 'Insertar panel tipo Jira';
+    btn.innerHTML = iconHtml('panel', 20);
+
+    const menu = document.createElement('div');
+    menu.className = 'da-toolbar-panel-menu';
+
+    PANEL_TYPES.forEach(panel => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = `da-toolbar-panel-item da-panel-${panel.key}`;
+        item.dataset.panelType = panel.key;
+        item.title = panel.label;
+        item.innerHTML = `
+            <span class="da-panel-item-icon">${iconHtml(panel.icon, 16)}</span>
+            <span class="da-panel-item-label">${panel.label}</span>
+        `;
+        item.addEventListener('click', e => {
+            e.preventDefault();
+            editor.chain().focus().setPanel(panel.key).run();
+            menu.classList.remove('da-toolbar-panel-menu-open');
+        });
+        menu.appendChild(item);
+    });
+
+    btn.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        menu.classList.toggle('da-toolbar-panel-menu-open');
+    });
+
+    document.addEventListener('click', () => {
+        menu.classList.remove('da-toolbar-panel-menu-open');
+    });
+
+    wrapper.appendChild(btn);
+    wrapper.appendChild(menu);
     container.appendChild(wrapper);
 }

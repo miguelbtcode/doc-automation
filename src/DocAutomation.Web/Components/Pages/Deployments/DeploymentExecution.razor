@@ -43,10 +43,10 @@ else
     </RadzenAlert>
 
     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Class="rz-mb-4">
-        <RadzenButton Text="Copiar como HTML (para pegar en Jira)" Icon="content_copy"
-                      ButtonStyle="ButtonStyle.Primary" Click="@(() => CopyAsHtml())" />
-        <RadzenButton Text="Descargar .html" Icon="download"
-                      ButtonStyle="ButtonStyle.Base" Variant="Variant.Outlined" Click="@(() => ExportAsHtml())" />
+        <RadzenButton Text="Copiar como Wiki (para Jira)" Icon="content_copy"
+                      ButtonStyle="ButtonStyle.Primary" Click="@(() => CopyAsWiki())" />
+        <RadzenButton Text="Copiar como HTML" Icon="content_copy"
+                      ButtonStyle="ButtonStyle.Base" Variant="Variant.Outlined" Click="@(() => CopyAsHtml())" />
     </RadzenStack>
 
     @RenderSection("Pasos Principales", _document.Steps, "rocket_launch", "var(--rz-primary)",
@@ -229,6 +229,146 @@ else
         }
     }
 
+    private string BuildWikiReport()
+    {
+        if (_document is null || _deployment is null) return string.Empty;
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"h1. {_deployment.TemplateName} (v{_deployment.TemplateVersion})");
+        sb.AppendLine($"_Generado: {_deployment.StartedAt:yyyy-MM-dd HH:mm} UTC por {_deployment.CompletedBy}_");
+        sb.AppendLine();
+
+        AppendSectionWiki(sb, "Pasos Principales", _document.Steps);
+        AppendSectionWiki(sb, "Post-Pase", _document.PostSteps);
+        AppendSectionWiki(sb, "Reversión", _document.Reversion);
+
+        return sb.ToString();
+    }
+
+    private static void AppendSectionWiki(System.Text.StringBuilder sb, string title, List<StepDefinition> steps)
+    {
+        if (steps.Count == 0) return;
+        sb.AppendLine($"h2. {title}");
+        var idx = 0;
+        foreach (var step in steps)
+        {
+            idx++;
+            var stepIcon = step.Type == StepType.Verification ? "(verificación)" : "(acción)";
+            sb.AppendLine($"h3. {idx}. {step.Title} {stepIcon}");
+            if (!string.IsNullOrWhiteSpace(step.Description))
+            {
+                sb.AppendLine(HtmlToWiki(step.Description));
+            }
+            sb.AppendLine();
+            if (step.OnFail is { Steps.Count: > 0 })
+            {
+                sb.AppendLine("_↳ Si falla, ejecutar:_");
+                var subIdx = 0;
+                foreach (var sub in step.OnFail.Steps)
+                {
+                    subIdx++;
+                    sb.AppendLine($"# {idx}.{subIdx} {sub.Title}");
+                    if (!string.IsNullOrWhiteSpace(sub.Description))
+                    {
+                        sb.AppendLine(HtmlToWiki(sub.Description));
+                    }
+                    sb.AppendLine();
+                }
+            }
+        }
+    }
+
+    private static string EscapeWiki(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+        return text.Replace("{", "\\{").Replace("}", "\\}");
+    }
+
+    private static readonly System.Collections.Generic.Dictionary<string, string> JiraPanelColors = new()
+    {
+        { "info", "#DEEBFF" },
+        { "note", "#EAE6FF" },
+        { "success", "#E3FCEF" },
+        { "tip", "#E3FCEF" },
+        { "warning", "#FFFAE6" },
+        { "error", "#FFEBE6" }
+    };
+
+    private static string HtmlToWiki(string html)
+    {
+        if (string.IsNullOrWhiteSpace(html)) return string.Empty;
+
+        var wiki = html;
+        wiki = ConvertPanelsToWiki(wiki);
+
+        // Preserve code blocks
+        var codeBlocks = new System.Collections.Generic.List<(string placeholder, string original)>();
+        var codeRegex = new System.Text.RegularExpressions.Regex(@"<pre><code>(.*?)</code></pre>", System.Text.RegularExpressions.RegexOptions.Singleline);
+        var matches = codeRegex.Matches(wiki);
+        for (int i = 0; i < matches.Count; i++)
+        {
+            var placeholder = $"__CODEBLOCK_{i}__";
+            var codeContent = System.Net.WebUtility.HtmlDecode(matches[i].Groups[1].Value);
+            codeBlocks.Add((placeholder, $"{{code}}\n{codeContent}\n{{code}}"));
+            wiki = wiki.Replace(matches[i].Value, placeholder);
+        }
+
+        // Strip HTML tags
+        wiki = System.Text.RegularExpressions.Regex.Replace(wiki, @"<br\s*/?>", "\n", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        wiki = System.Text.RegularExpressions.Regex.Replace(wiki, @"</p>", "\n\n", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        wiki = System.Text.RegularExpressions.Regex.Replace(wiki, @"</li>", "\n", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        wiki = System.Text.RegularExpressions.Regex.Replace(wiki, @"</h[1-6]>", "\n", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        wiki = System.Text.RegularExpressions.Regex.Replace(wiki, @"<[^>]+>", "");
+        wiki = System.Net.WebUtility.HtmlDecode(wiki);
+
+        // Convert Markdown to Wiki
+        wiki = System.Text.RegularExpressions.Regex.Replace(wiki, @"\*\*(.+?)\*\*", "*$1*");
+        wiki = System.Text.RegularExpressions.Regex.Replace(wiki, @"__(.+?)__", "_$1_");
+        wiki = System.Text.RegularExpressions.Regex.Replace(wiki, @"`(.+?)`", "{{$1}}");
+
+        // Clean up
+        wiki = System.Text.RegularExpressions.Regex.Replace(wiki, @"\n{3,}", "\n\n");
+        wiki = string.Join("\n", wiki.Split('\n').Select(line => line.Trim()));
+
+        // Restore code blocks
+        for (int i = 0; i < codeBlocks.Count; i++)
+            wiki = wiki.Replace(codeBlocks[i].placeholder, codeBlocks[i].original);
+
+        return wiki.Trim();
+    }
+
+    private static string ConvertPanelsToWiki(string html)
+    {
+        var panelRegex = new System.Text.RegularExpressions.Regex(
+            @"<div\s+data-panel-type=""([^""]+)"">\s*<div\s+class=""da-panel-content"">\s*(.*?)\s*</div>\s*</div>",
+            System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        return panelRegex.Replace(html, match =>
+        {
+            var panelType = match.Groups[1].Value.ToLowerInvariant();
+            var content = match.Groups[2].Value;
+
+            var wikiPanelType = panelType switch
+            {
+                "info" => "{info}",
+                "note" => "{note}",
+                "success" => "{tip}",
+                "tip" => "{tip}",
+                "warning" => "{warning}",
+                "error" => "{warning}",
+                _ => null
+            };
+
+            if (wikiPanelType != null)
+                return $"{wikiPanelType}\n{content.Trim()}\n{wikiPanelType.Replace("{", "{/")}";
+
+            if (JiraPanelColors.TryGetValue(panelType, out var color))
+                return $"{{panel:bgColor={color}}}\n{content.Trim()}\n{{panel}}";
+
+            return $"{{info}}\n{content.Trim()}\n{{/info}}";
+        });
+    }
+
     private async Task CopyAsHtml()
     {
         var content = BuildHtmlReport();
@@ -236,10 +376,10 @@ else
         NotificationService.Notify(NotificationSeverity.Success, "HTML copiado al portapapeles.");
     }
 
-    private async Task ExportAsHtml()
+    private async Task CopyAsWiki()
     {
-        var content = BuildHtmlReport();
-        var fileName = $"mvp-{_deployment!.TemplateSlug}-{_deployment.StartedAt:yyyyMMdd-HHmmss}.html";
-        await JS.InvokeVoidAsync("docAutomation.downloadText", fileName, content);
+        var content = BuildWikiReport();
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", content);
+        NotificationService.Notify(NotificationSeverity.Success, "Wiki markup copiado al portapapeles.");
     }
 }
