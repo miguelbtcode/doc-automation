@@ -4,62 +4,67 @@
 <RadzenTabs TabPosition="TabPosition.Top" RenderMode="TabRenderMode.Client">
     <Tabs>
         <RadzenTabsItem Text="@($"Pasos Principales ({Model.MainSteps.Count})")">
-            @RenderSectionEditor(Model.MainSteps, "principal", allowVerification: true)
+            <div class="rz-p-4">
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color); margin-bottom: 1rem;">
+                    Definí los pasos de la sección principal. Cada paso debe tener un título y una descripción detallada.
+                </RadzenText>
+
+                @foreach (var step in Model.MainSteps)
+                {
+                    <StepEditCard @key="step.Id" Step="step" Position="@(Model.MainSteps.IndexOf(step) + 1)"
+                                  TotalCount="@Model.MainSteps.Count" AllowVerification="true"
+                                  OnMoveUp="() => MoveUp(Model.MainSteps, step)"
+                                  OnMoveDown="() => MoveDown(Model.MainSteps, step)"
+                                  OnDelete="() => Delete(Model.MainSteps, step)" />
+                }
+
+                <RadzenButton Text="Agregar paso" Icon="add" ButtonStyle="ButtonStyle.Primary"
+                              Variant="Variant.Outlined" Click="@(() => AddStep(Model.MainSteps))" />
+            </div>
         </RadzenTabsItem>
         <RadzenTabsItem Text="@($"Post-Pase ({Model.PostSteps.Count})")">
-            @RenderSectionEditor(Model.PostSteps, "post-pase", allowVerification: false)
+            <div class="rz-p-4">
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color); margin-bottom: 1rem;">
+                    Definí los pasos de la sección post-pase. Cada paso debe tener un título y una descripción detallada.
+                </RadzenText>
+
+                @foreach (var step in Model.PostSteps)
+                {
+                    <StepEditCard @key="step.Id" Step="step" Position="@(Model.PostSteps.IndexOf(step) + 1)"
+                                  TotalCount="@Model.PostSteps.Count" AllowVerification="false"
+                                  OnMoveUp="() => MoveUp(Model.PostSteps, step)"
+                                  OnMoveDown="() => MoveDown(Model.PostSteps, step)"
+                                  OnDelete="() => Delete(Model.PostSteps, step)" />
+                }
+
+                <RadzenButton Text="Agregar paso" Icon="add" ButtonStyle="ButtonStyle.Primary"
+                              Variant="Variant.Outlined" Click="@(() => AddStep(Model.PostSteps))" />
+            </div>
         </RadzenTabsItem>
         <RadzenTabsItem Text="@($"Reversión ({Model.ReversionSteps.Count})")">
-            @RenderSectionEditor(Model.ReversionSteps, "reversión", allowVerification: true)
+            <div class="rz-p-4">
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color); margin-bottom: 1rem;">
+                    Definí los pasos de la sección reversión. Cada paso debe tener un título y una descripción detallada.
+                </RadzenText>
+
+                @foreach (var step in Model.ReversionSteps)
+                {
+                    <StepEditCard @key="step.Id" Step="step" Position="@(Model.ReversionSteps.IndexOf(step) + 1)"
+                                  TotalCount="@Model.ReversionSteps.Count" AllowVerification="true"
+                                  OnMoveUp="() => MoveUp(Model.ReversionSteps, step)"
+                                  OnMoveDown="() => MoveDown(Model.ReversionSteps, step)"
+                                  OnDelete="() => Delete(Model.ReversionSteps, step)" />
+                }
+
+                <RadzenButton Text="Agregar paso" Icon="add" ButtonStyle="ButtonStyle.Primary"
+                              Variant="Variant.Outlined" Click="@(() => AddStep(Model.ReversionSteps))" />
+            </div>
         </RadzenTabsItem>
     </Tabs>
 </RadzenTabs>
 
 @code {
     [Parameter, EditorRequired] public StepsEditorModel Model { get; set; } = null!;
-
-    private RenderFragment RenderSectionEditor(List<StepEditModel> steps, string sectionLabel, bool allowVerification) => builder =>
-    {
-        var seq = 0;
-
-        builder.OpenElement(seq++, "div");
-        builder.AddAttribute(seq++, "class", "rz-p-4");
-
-        builder.OpenComponent<RadzenText>(seq++);
-        builder.AddAttribute(seq++, "TextStyle", TextStyle.Body2);
-        builder.AddAttribute(seq++, "Style", "color: var(--rz-text-secondary-color); margin-bottom: 1rem;");
-        builder.AddAttribute(seq++, "ChildContent", (RenderFragment)(t => t.AddContent(0,
-            $"Definí los pasos de la sección {sectionLabel}. Cada paso debe tener un título y una descripción detallada.")));
-        builder.CloseComponent();
-
-        var index = 0;
-        foreach (var step in steps.ToList())
-        {
-            index++;
-            var captured = step;
-            var capturedIndex = index;
-            builder.OpenComponent<StepEditCard>(seq++);
-            builder.AddAttribute(seq++, "Step", captured);
-            builder.AddAttribute(seq++, "Position", capturedIndex);
-            builder.AddAttribute(seq++, "TotalCount", steps.Count);
-            builder.AddAttribute(seq++, "AllowVerification", allowVerification);
-            builder.AddAttribute(seq++, "OnMoveUp", EventCallback.Factory.Create(this, () => MoveUp(steps, captured)));
-            builder.AddAttribute(seq++, "OnMoveDown", EventCallback.Factory.Create(this, () => MoveDown(steps, captured)));
-            builder.AddAttribute(seq++, "OnDelete", EventCallback.Factory.Create(this, () => Delete(steps, captured)));
-            builder.SetKey(captured.Id);
-            builder.CloseComponent();
-        }
-
-        builder.OpenComponent<RadzenButton>(seq++);
-        builder.AddAttribute(seq++, "Text", "Agregar paso");
-        builder.AddAttribute(seq++, "Icon", "add");
-        builder.AddAttribute(seq++, "ButtonStyle", ButtonStyle.Primary);
-        builder.AddAttribute(seq++, "Variant", Variant.Outlined);
-        builder.AddAttribute(seq++, "Click", EventCallback.Factory.Create(this, () => AddStep(steps)));
-        builder.CloseComponent();
-
-        builder.CloseElement();
-    };
 
     private void AddStep(List<StepEditModel> steps)
     {

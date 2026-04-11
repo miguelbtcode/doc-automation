@@ -18,7 +18,7 @@
         <RadzenButton Text="Cancelar" Variant="Variant.Flat" ButtonStyle="ButtonStyle.Base"
                       Click="@(() => Nav.NavigateTo("/admin/templates"))" />
         <RadzenButton Text="@(_saving ? "Guardando..." : "Crear Template (Ctrl+S)")" Icon="save"
-                      ButtonStyle="ButtonStyle.Primary" Disabled="_saving" Click="SaveAsync" />
+                      ButtonStyle="ButtonStyle.Primary" Disabled="_saving" Click="@(() => SaveAsync())" />
     </Actions>
 </PageHeader>
 

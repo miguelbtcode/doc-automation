@@ -12,6 +12,7 @@ on:
 
 env:
   DOTNET_VERSION: "9.0.x"
+  NODE_VERSION: "22"
   SOLUTION_FILE: "doc-automation.slnx"
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
@@ -32,6 +33,13 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: src/DocAutomation.Web/editor/package-lock.json
+
       - name: Install Aspire workload
         run: dotnet workload install aspire
 
@@ -42,6 +50,14 @@ jobs:
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
+
+      - name: Install editor dependencies
+        run: npm ci --no-audit --no-fund
+        working-directory: src/DocAutomation.Web/editor
+
+      - name: Build editor bundle
+        run: npm run build
+        working-directory: src/DocAutomation.Web/editor
 
       - name: Restore dependencies
         run: dotnet restore ${{ env.SOLUTION_FILE }}

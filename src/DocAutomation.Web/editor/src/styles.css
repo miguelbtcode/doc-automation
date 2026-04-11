@@ -1,0 +1,564 @@
+/* ==============================================================================
+   Tiptap Editor — estilos estilo Jira/Confluence con dark mode
+   ============================================================================== */
+
+.da-editor {
+    border: 1px solid #DFE1E6;
+    border-radius: 6px;
+    background: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+html[data-theme="dark"] .da-editor {
+    background: #1D2125;
+    border-color: #38414A;
+    color: #B6C2CF;
+}
+
+/* ============= Toolbar ============= */
+.da-editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 8px;
+    background: #F4F5F7;
+    border-bottom: 1px solid #DFE1E6;
+}
+
+html[data-theme="dark"] .da-editor-toolbar {
+    background: #22272B;
+    border-bottom-color: #38414A;
+}
+
+.da-toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #42526E;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.12s;
+    position: relative;
+}
+
+.da-toolbar-btn svg {
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+}
+
+.da-toolbar-btn:hover {
+    background: #EBECF0;
+}
+
+.da-toolbar-btn.da-toolbar-active {
+    background: #DEEBFF;
+    color: #0747A6;
+}
+
+html[data-theme="dark"] .da-toolbar-btn {
+    color: #9FADBC;
+}
+
+html[data-theme="dark"] .da-toolbar-btn:hover {
+    background: #2C333A;
+}
+
+html[data-theme="dark"] .da-toolbar-btn.da-toolbar-active {
+    background: #1c2b4a;
+    color: #85B8FF;
+}
+
+.da-toolbar-separator {
+    width: 1px;
+    height: 22px;
+    background: #DFE1E6;
+    margin: 0 4px;
+}
+
+html[data-theme="dark"] .da-toolbar-separator {
+    background: #38414A;
+}
+
+.da-toolbar-select {
+    height: 32px;
+    padding: 0 28px 0 10px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: #42526E;
+    font-size: 13px;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%2342526E' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+}
+
+.da-toolbar-select:hover {
+    background-color: #EBECF0;
+}
+
+html[data-theme="dark"] .da-toolbar-select {
+    color: #9FADBC;
+}
+
+html[data-theme="dark"] .da-toolbar-select:hover {
+    background-color: #2C333A;
+}
+
+.da-toolbar-color-picker,
+.da-toolbar-highlight-picker {
+    position: relative;
+}
+
+.da-toolbar-color-picker input[type="color"],
+.da-toolbar-highlight-picker input[type="color"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    border: none;
+}
+
+/* Colores específicos de los botones de panel en el toolbar */
+.da-toolbar-panel-info { color: #0747A6; }
+.da-toolbar-panel-note { color: #403294; }
+.da-toolbar-panel-success { color: #006644; }
+.da-toolbar-panel-warning { color: #FF8B00; }
+.da-toolbar-panel-error { color: #BF2600; }
+
+/* ============= Content area ============= */
+.da-editor-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 24px;
+    min-height: 200px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #172B4D;
+}
+
+html[data-theme="dark"] .da-editor-content {
+    color: #B6C2CF;
+}
+
+.da-editor-content .ProseMirror {
+    outline: none;
+    min-height: 100%;
+}
+
+.da-editor-content .ProseMirror > * + * {
+    margin-top: 0.75em;
+}
+
+.da-editor-content h1 { font-size: 1.75em; font-weight: 600; margin-top: 1em; }
+.da-editor-content h2 { font-size: 1.5em; font-weight: 600; margin-top: 1em; }
+.da-editor-content h3 { font-size: 1.25em; font-weight: 600; margin-top: 1em; }
+.da-editor-content h4 { font-size: 1.1em; font-weight: 600; margin-top: 1em; }
+
+.da-editor-content p {
+    margin: 0;
+}
+
+.da-editor-content ul,
+.da-editor-content ol {
+    padding-left: 1.5rem;
+}
+
+.da-editor-content blockquote {
+    border-left: 3px solid #DFE1E6;
+    padding-left: 1rem;
+    color: #5E6C84;
+    font-style: italic;
+}
+
+html[data-theme="dark"] .da-editor-content blockquote {
+    border-left-color: #38414A;
+    color: #8C9BAB;
+}
+
+.da-editor-content code {
+    background: #F4F5F7;
+    color: #BF2600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.875em;
+}
+
+html[data-theme="dark"] .da-editor-content code {
+    background: #2C333A;
+    color: #FF7452;
+}
+
+.da-editor-content pre {
+    background: #1D2125;
+    color: #B6C2CF;
+    padding: 1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.875em;
+}
+
+.da-editor-content pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+}
+
+.da-editor-content a {
+    color: #0052CC;
+    text-decoration: underline;
+}
+
+html[data-theme="dark"] .da-editor-content a {
+    color: #85B8FF;
+}
+
+.da-editor-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.75rem 0;
+    table-layout: fixed;
+}
+
+.da-editor-content table th,
+.da-editor-content table td {
+    border: 1px solid #DFE1E6;
+    padding: 8px 12px;
+    vertical-align: top;
+    position: relative;
+}
+
+.da-editor-content table th {
+    background: #F4F5F7;
+    font-weight: 600;
+    text-align: left;
+}
+
+html[data-theme="dark"] .da-editor-content table th,
+html[data-theme="dark"] .da-editor-content table td {
+    border-color: #38414A;
+}
+
+html[data-theme="dark"] .da-editor-content table th {
+    background: #22272B;
+}
+
+.da-editor-content hr {
+    border: none;
+    border-top: 1px solid #DFE1E6;
+    margin: 1.5em 0;
+}
+
+html[data-theme="dark"] .da-editor-content hr {
+    border-top-color: #38414A;
+}
+
+/* Placeholder cuando el editor está vacío */
+.da-editor-content .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: #97A0AF;
+    pointer-events: none;
+    height: 0;
+}
+
+/* ============= Panels (los 5 tipos Jira) =============
+   Los íconos van como background-image SVG inline (url-encoded) en ::before.
+   Esto mantiene el HTML serializado limpio (solo <div data-panel-type>) y permite
+   que Jira reconozca el panel al pegar y aplique sus propios íconos.
+*/
+.da-editor-content .da-panel {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    border-radius: 4px;
+    line-height: 1.5;
+    position: relative;
+}
+
+.da-editor-content .da-panel::before {
+    content: '';
+    display: block;
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 24px 24px;
+}
+
+.da-editor-content .da-panel-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.da-editor-content .da-panel-content > * {
+    margin: 0;
+}
+
+.da-editor-content .da-panel-content > * + * {
+    margin-top: 0.5em;
+}
+
+/* Info — círculo azul con "i" */
+.da-editor-content .da-panel-info {
+    background-color: #DEEBFF;
+    color: #172B4D;
+}
+.da-editor-content .da-panel-info::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%230747A6' fill-rule='evenodd' d='M12 20a8 8 0 1 1 0-16 8 8 0 0 1 0 16m0-8.5a1 1 0 0 0-1 1V15a1 1 0 0 0 2 0v-2.5a1 1 0 0 0-1-1m0-1.125a1.375 1.375 0 1 0 0-2.75 1.375 1.375 0 0 0 0 2.75'/%3E%3C/svg%3E");
+}
+
+/* Note — pencil violeta */
+.da-editor-content .da-panel-note {
+    background-color: #EAE6FF;
+    color: #172B4D;
+}
+.da-editor-content .da-panel-note::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23403294' fill-rule='evenodd' d='M19.078 4.922a3.151 3.151 0 0 0-4.456 0l-9.7 9.7a1 1 0 0 0-.252.422l-1.629 5.296a1 1 0 0 0 1.246 1.247l5.296-1.629a1 1 0 0 0 .422-.252l9.7-9.7a3.151 3.151 0 0 0 0-4.456zm-1.414 1.414a1.151 1.151 0 0 1 1.628 1.628l-9.43 9.43-2.171.668.668-2.171z'/%3E%3C/svg%3E");
+}
+
+/* Success — checkmark verde */
+.da-editor-content .da-panel-success {
+    background-color: #E3FCEF;
+    color: #172B4D;
+}
+.da-editor-content .da-panel-success::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23006644' fill-rule='evenodd' d='M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16m4.16 5.527L10.5 15.187 7.84 12.527a1 1 0 1 0-1.413 1.414l3.366 3.366a1 1 0 0 0 1.414 0l6.366-6.366a1 1 0 0 0-1.414-1.414'/%3E%3C/svg%3E");
+}
+
+/* Warning — triángulo amarillo */
+.da-editor-content .da-panel-warning {
+    background-color: #FFFAE6;
+    color: #172B4D;
+}
+.da-editor-content .da-panel-warning::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23FF8B00' fill-rule='evenodd' d='M12.938 4.967a1.085 1.085 0 0 0-1.876 0L3.193 18.45A1.084 1.084 0 0 0 4.13 20.083h15.74A1.084 1.084 0 0 0 20.807 18.45zM12 10a1 1 0 0 1 1 1v3.5a1 1 0 0 1-2 0V11a1 1 0 0 1 1-1m0 6.875a1.375 1.375 0 1 1 0 2.75 1.375 1.375 0 0 1 0-2.75'/%3E%3C/svg%3E");
+}
+
+/* Error — círculo rojo con X */
+.da-editor-content .da-panel-error {
+    background-color: #FFEBE6;
+    color: #172B4D;
+}
+.da-editor-content .da-panel-error::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23BF2600' fill-rule='evenodd' d='M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16m2.829 5.757L12 12.586 9.172 9.757a1 1 0 1 0-1.415 1.415L10.586 14l-2.829 2.828a1 1 0 1 0 1.415 1.415L12 15.414l2.828 2.829a1 1 0 0 0 1.415-1.415L13.414 14l2.829-2.828a1 1 0 1 0-1.415-1.415'/%3E%3C/svg%3E");
+}
+
+/* Dark mode para paneles */
+html[data-theme="dark"] .da-editor-content .da-panel-info {
+    background-color: #1c2b4a;
+    color: #c8d3e8;
+}
+html[data-theme="dark"] .da-editor-content .da-panel-note {
+    background-color: #2a2440;
+    color: #d8d3ea;
+}
+html[data-theme="dark"] .da-editor-content .da-panel-success {
+    background-color: #1b3a2c;
+    color: #c8e8d6;
+}
+html[data-theme="dark"] .da-editor-content .da-panel-warning {
+    background-color: #3d3320;
+    color: #ead7a8;
+}
+html[data-theme="dark"] .da-editor-content .da-panel-error {
+    background-color: #3d1f1c;
+    color: #e8c4be;
+}
+
+/* ============= Bubble menu (toolbar contextual sobre paneles) ============= */
+.da-editor-bubble-menu,
+.da-bubble-menu {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 6px;
+    background: #FFFFFF;
+    border: 1px solid #DFE1E6;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(9, 30, 66, 0.15);
+}
+
+html[data-theme="dark"] .da-editor-bubble-menu,
+html[data-theme="dark"] .da-bubble-menu {
+    background: #22272B;
+    border-color: #38414A;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.da-bubble-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.12s;
+    color: #42526E;
+}
+
+.da-bubble-btn svg {
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+}
+
+.da-bubble-btn:hover {
+    background: #EBECF0;
+}
+
+html[data-theme="dark"] .da-bubble-btn {
+    color: #9FADBC;
+}
+
+html[data-theme="dark"] .da-bubble-btn:hover {
+    background: #2C333A;
+}
+
+.da-bubble-info { color: #0747A6; }
+.da-bubble-note { color: #403294; }
+.da-bubble-success { color: #006644; }
+.da-bubble-warning { color: #FF8B00; }
+.da-bubble-error { color: #BF2600; }
+.da-bubble-remove { color: #DE350B; }
+
+.da-bubble-separator {
+    width: 1px;
+    height: 18px;
+    background: #DFE1E6;
+    margin: 0 4px;
+}
+
+html[data-theme="dark"] .da-bubble-separator {
+    background: #38414A;
+}
+
+/* ============= Slash command menu ============= */
+.da-slash-menu {
+    background: #FFFFFF;
+    border: 1px solid #DFE1E6;
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(9, 30, 66, 0.15);
+    padding: 4px;
+    max-height: 320px;
+    overflow-y: auto;
+    width: 280px;
+}
+
+html[data-theme="dark"] .da-slash-menu {
+    background: #22272B;
+    border-color: #38414A;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.da-slash-empty {
+    padding: 12px;
+    color: #97A0AF;
+    font-size: 13px;
+    text-align: center;
+}
+
+.da-slash-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s;
+}
+
+.da-slash-item:hover,
+.da-slash-item-selected {
+    background: #DEEBFF;
+}
+
+html[data-theme="dark"] .da-slash-item:hover,
+html[data-theme="dark"] .da-slash-item-selected {
+    background: #1c2b4a;
+}
+
+.da-slash-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #F4F5F7;
+    border-radius: 4px;
+}
+
+.da-slash-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.da-slash-icon-legacy {
+    font-size: 14px;
+    font-weight: 600;
+    color: #42526E;
+}
+
+html[data-theme="dark"] .da-slash-icon {
+    background: #2C333A;
+    color: #9FADBC;
+}
+
+.da-slash-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.da-slash-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #172B4D;
+}
+
+html[data-theme="dark"] .da-slash-title {
+    color: #B6C2CF;
+}
+
+.da-slash-desc {
+    font-size: 12px;
+    color: #5E6C84;
+}
+
+html[data-theme="dark"] .da-slash-desc {
+    color: #8C9BAB;
+}
+
+/* ============= Selection highlight para tablas ============= */
+.da-editor-content .ProseMirror .selectedCell:after {
+    background: rgba(0, 82, 204, 0.15);
+    content: "";
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+    z-index: 2;
+}

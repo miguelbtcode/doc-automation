@@ -22,38 +22,39 @@ public class UpdateTemplateCommandHandler(ITemplateRepository repository, IUnitO
         CancellationToken cancellationToken
     )
     {
-        var template = await repository.GetByIdAsync(request.Id, cancellationToken);
-        if (template is null)
+        var newInputs = request
+            .Inputs.Select(
+                (input, index) =>
+                    new TemplateInput
+                    {
+                        Id = Guid.NewGuid(),
+                        TemplateId = request.Id,
+                        Key = input.Key.Trim(),
+                        Label = input.Label.Trim(),
+                        InputType = input.InputType,
+                        IsRequired = input.IsRequired,
+                        DefaultValue = input.DefaultValue,
+                        Options = input.Options,
+                        DisplayOrder = input.DisplayOrder > 0 ? input.DisplayOrder : index + 1,
+                        HelpText = input.HelpText,
+                    }
+            )
+            .ToList();
+
+        var updated = await repository.ReplaceAsync(
+            request.Id,
+            request.Slug,
+            request.Name,
+            request.Description,
+            request.StepsJson,
+            newInputs,
+            cancellationToken
+        );
+
+        if (!updated)
             return false;
 
-        template.Slug = request.Slug.Trim().ToLowerInvariant();
-        template.Name = request.Name.Trim();
-        template.Description = request.Description?.Trim();
-        template.StepsJson = request.StepsJson;
-        template.Version += 1;
-        template.UpdatedAt = DateTime.UtcNow;
-
-        template.Inputs.Clear();
-        foreach (var (input, index) in request.Inputs.Select((i, idx) => (i, idx)))
-        {
-            template.Inputs.Add(
-                new TemplateInput
-                {
-                    Id = Guid.NewGuid(),
-                    TemplateId = template.Id,
-                    Key = input.Key.Trim(),
-                    Label = input.Label.Trim(),
-                    InputType = input.InputType,
-                    IsRequired = input.IsRequired,
-                    DefaultValue = input.DefaultValue,
-                    Options = input.Options,
-                    DisplayOrder = input.DisplayOrder > 0 ? input.DisplayOrder : index + 1,
-                    HelpText = input.HelpText,
-                }
-            );
-        }
-
-        repository.Update(template);
+        // Solo los inputs nuevos quedan pendientes en el change tracker → SaveChanges los inserta
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return true;
     }

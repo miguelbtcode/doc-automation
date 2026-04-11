@@ -23,42 +23,8 @@
                     <RadzenText TextStyle="TextStyle.Caption" Class="rz-mb-1">
                         Descripción detallada <span style="color: var(--rz-danger);">*</span>
                     </RadzenText>
-                    <RadzenHtmlEditor @bind-Value="Step.Description" style="height: 340px;" UploadUrl="upload/image">
-                        <RadzenHtmlEditorUndo />
-                        <RadzenHtmlEditorRedo />
-                        <RadzenHtmlEditorSeparator />
-                        <RadzenHtmlEditorBold />
-                        <RadzenHtmlEditorItalic />
-                        <RadzenHtmlEditorUnderline />
-                        <RadzenHtmlEditorStrikeThrough />
-                        <RadzenHtmlEditorSeparator />
-                        <RadzenHtmlEditorColor />
-                        <RadzenHtmlEditorBackground />
-                        <RadzenHtmlEditorRemoveFormat />
-                        <RadzenHtmlEditorSeparator />
-                        <RadzenHtmlEditorFontName />
-                        <RadzenHtmlEditorFontSize />
-                        <RadzenHtmlEditorFormatBlock />
-                        <RadzenHtmlEditorSeparator />
-                        <RadzenHtmlEditorAlignLeft />
-                        <RadzenHtmlEditorAlignCenter />
-                        <RadzenHtmlEditorAlignRight />
-                        <RadzenHtmlEditorJustify />
-                        <RadzenHtmlEditorSeparator />
-                        <RadzenHtmlEditorIndent />
-                        <RadzenHtmlEditorOutdent />
-                        <RadzenHtmlEditorUnorderedList />
-                        <RadzenHtmlEditorOrderedList />
-                        <RadzenHtmlEditorSeparator />
-                        <RadzenHtmlEditorSubscript />
-                        <RadzenHtmlEditorSuperscript />
-                        <RadzenHtmlEditorSeparator />
-                        <RadzenHtmlEditorLink />
-                        <RadzenHtmlEditorUnlink />
-                        <RadzenHtmlEditorImage />
-                        <RadzenHtmlEditorSeparator />
-                        <RadzenHtmlEditorSource />
-                    </RadzenHtmlEditor>
+                    <TiptapEditor @bind-Value="Step.Description" Height="380px"
+                                  Placeholder="Empezá a escribir... usá &quot;/&quot; para insertar headings, listas, paneles, etc." />
                 </RadzenColumn>
             </RadzenRow>
 
@@ -86,23 +52,8 @@
                                     <RadzenTextBox @bind-Value="captured.Title" />
                                 </RadzenFormField>
                                 <div class="rz-mt-2">
-                                    <RadzenHtmlEditor @bind-Value="captured.Description" style="height: 220px;">
-                                        <RadzenHtmlEditorUndo />
-                                        <RadzenHtmlEditorRedo />
-                                        <RadzenHtmlEditorSeparator />
-                                        <RadzenHtmlEditorBold />
-                                        <RadzenHtmlEditorItalic />
-                                        <RadzenHtmlEditorUnderline />
-                                        <RadzenHtmlEditorSeparator />
-                                        <RadzenHtmlEditorColor />
-                                        <RadzenHtmlEditorBackground />
-                                        <RadzenHtmlEditorFormatBlock />
-                                        <RadzenHtmlEditorSeparator />
-                                        <RadzenHtmlEditorUnorderedList />
-                                        <RadzenHtmlEditorOrderedList />
-                                        <RadzenHtmlEditorLink />
-                                        <RadzenHtmlEditorSource />
-                                    </RadzenHtmlEditor>
+                                    <TiptapEditor @bind-Value="captured.Description" Height="240px"
+                                                  Placeholder="Describí la acción correctiva..." />
                                 </div>
                             </div>
                             <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Text"
@@ -111,17 +62,17 @@
                     </RadzenCard>
                 }
                 <RadzenButton Text="Agregar acción correctiva" Icon="add" ButtonStyle="ButtonStyle.Warning"
-                              Variant="Variant.Text" Size="ButtonSize.Small" Click="AddSubStep" />
+                              Variant="Variant.Text" Size="ButtonSize.Small" Click="@(() => AddSubStep())" />
             }
         </div>
 
         <RadzenStack Gap="0.25rem">
             <RadzenButton Icon="keyboard_arrow_up" Variant="Variant.Text" Size="ButtonSize.Small"
-                          Disabled="@(Position == 1)" Click="OnMoveUp" />
+                          Disabled="@(Position == 1)" Click="@(() => OnMoveUp.InvokeAsync())" />
             <RadzenButton Icon="keyboard_arrow_down" Variant="Variant.Text" Size="ButtonSize.Small"
-                          Disabled="@(Position == TotalCount)" Click="OnMoveDown" />
+                          Disabled="@(Position == TotalCount)" Click="@(() => OnMoveDown.InvokeAsync())" />
             <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Text"
-                          Size="ButtonSize.Small" Click="OnDelete" />
+                          Size="ButtonSize.Small" Click="@(() => OnDelete.InvokeAsync())" />
         </RadzenStack>
     </RadzenStack>
 </RadzenCard>
@@ -148,6 +99,23 @@
     private BadgeStyle NumberBadgeStyle => Step.Type == StepType.Verification
         ? BadgeStyle.Warning
         : BadgeStyle.Primary;
+
+    // Track previous values to prevent unnecessary re-renders
+    private StepType? _previousStepType;
+    private string? _previousStepTitle;
+    private bool _shouldRender;
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        
+        // Only trigger re-render if Type or Title actually changed
+        _shouldRender = Step.Type != _previousStepType || Step.Title != _previousStepTitle;
+        _previousStepType = Step.Type;
+        _previousStepTitle = Step.Title;
+    }
+
+    protected override bool ShouldRender() => _shouldRender;
 
     private void AddSubStep()
     {

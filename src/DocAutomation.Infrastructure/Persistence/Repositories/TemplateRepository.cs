@@ -50,4 +50,45 @@ public class TemplateRepository(DocAutomationDbContext context) : ITemplateRepos
         template.UpdatedAt = DateTime.UtcNow;
         context.Templates.Update(template);
     }
+
+    public async Task<bool> ReplaceAsync(
+        Guid id,
+        string slug,
+        string name,
+        string? description,
+        string stepsJson,
+        IEnumerable<TemplateInput> newInputs,
+        CancellationToken ct = default
+    )
+    {
+        var exists = await context.Templates.AnyAsync(t => t.Id == id, ct);
+        if (!exists)
+            return false;
+
+        await context.TemplateInputs.Where(i => i.TemplateId == id).ExecuteDeleteAsync(ct);
+
+        var now = DateTime.UtcNow;
+        var trimmedDescription = description?.Trim();
+        await context
+            .Templates.Where(t => t.Id == id)
+            .ExecuteUpdateAsync(
+                setters =>
+                    setters
+                        .SetProperty(t => t.Slug, slug.Trim().ToLowerInvariant())
+                        .SetProperty(t => t.Name, name.Trim())
+                        .SetProperty(t => t.Description, trimmedDescription)
+                        .SetProperty(t => t.StepsJson, stepsJson)
+                        .SetProperty(t => t.UpdatedAt, now)
+                        .SetProperty(t => t.Version, t => t.Version + 1),
+                ct
+            );
+
+        foreach (var input in newInputs)
+        {
+            input.TemplateId = id;
+            await context.TemplateInputs.AddAsync(input, ct);
+        }
+
+        return true;
+    }
 }

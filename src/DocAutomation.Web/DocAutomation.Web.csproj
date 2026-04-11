@@ -17,5 +17,42 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <EditorSourceDir>$(MSBuildProjectDirectory)/editor</EditorSourceDir>
+    <EditorBundleDir>$(MSBuildProjectDirectory)/wwwroot/lib/editor</EditorBundleDir>
   </PropertyGroup>
+
+  <!--
+    Build del editor Tiptap (esbuild bundle).
+    Corre automáticamente antes del build de C# si:
+      - El bundle no existe, o
+      - Algún source del editor (.js / .css / package.json) es más nuevo que el bundle.
+    Usa <Inputs> y <Outputs> para que MSBuild lo cachee correctamente y no rebuildee
+    en cada build de Visual Studio / Rider / dotnet build.
+  -->
+  <ItemGroup>
+    <EditorSourceFile Include="$(EditorSourceDir)/src/**/*.js" />
+    <EditorSourceFile Include="$(EditorSourceDir)/src/**/*.css" />
+    <EditorSourceFile Include="$(EditorSourceDir)/package.json" />
+    <EditorSourceFile Include="$(EditorSourceDir)/esbuild.config.js" />
+  </ItemGroup>
+
+  <Target
+    Name="EnsureEditorNodeModules"
+    BeforeTargets="BuildEditorBundle"
+    Inputs="$(EditorSourceDir)/package.json"
+    Outputs="$(EditorSourceDir)/node_modules/.package-lock.json"
+  >
+    <Message Importance="high" Text="🔧 Installing editor npm dependencies..." />
+    <Exec Command="npm install --no-audit --no-fund" WorkingDirectory="$(EditorSourceDir)" />
+  </Target>
+
+  <Target
+    Name="BuildEditorBundle"
+    BeforeTargets="BeforeBuild"
+    Inputs="@(EditorSourceFile)"
+    Outputs="$(EditorBundleDir)/editor.bundle.js"
+  >
+    <Message Importance="high" Text="🔧 Building Tiptap editor bundle..." />
+    <Exec Command="npm run build" WorkingDirectory="$(EditorSourceDir)" />
+  </Target>
 </Project>

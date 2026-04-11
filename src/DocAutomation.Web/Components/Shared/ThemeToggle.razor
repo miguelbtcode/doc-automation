@@ -6,7 +6,7 @@
 <RadzenButton Icon="@(Theme.IsDark ? "light_mode" : "dark_mode")"
               Variant="Variant.Text"
               ButtonStyle="ButtonStyle.Light"
-              Click="ToggleAsync"
+              Click="@(() => ToggleAsync())"
               title="@(Theme.IsDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro")" />
 
 @code {

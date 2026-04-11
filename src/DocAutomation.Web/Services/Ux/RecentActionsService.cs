@@ -1,6 +1,6 @@
 using Microsoft.JSInterop;
 
-namespace DocAutomation.Web.Services;
+namespace DocAutomation.Web.Services.Ux;
 
 public enum RecentActionSeverity
 {

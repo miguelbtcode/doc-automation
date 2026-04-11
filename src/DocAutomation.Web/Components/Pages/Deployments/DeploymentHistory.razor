@@ -20,7 +20,7 @@
 
 <RadzenDataGrid Data="@_deployments" TItem="DeploymentListItemDto" IsLoading="@_loading"
                 AllowPaging="true" PageSize="20" AllowSorting="true" AllowFiltering="true"
-                Density="Density.Compact">
+                Density="Density.Compact" Virtualization="true">
     <Columns>
         <RadzenDataGridColumn TItem="DeploymentListItemDto" Property="TemplateName" Title="Template" />
         <RadzenDataGridColumn TItem="DeploymentListItemDto" Property="TemplateVersion" Title="Versión" Width="100px" />

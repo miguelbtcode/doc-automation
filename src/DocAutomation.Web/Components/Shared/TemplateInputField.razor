@@ -1,0 +1,80 @@
+@namespace DocAutomation.Web.Components.Shared
+@using DocAutomation.Application.Features.Templates.Models
+@using DocAutomation.Domain.Enums
+
+<RadzenFormField Text="@(Input.Label + (Input.IsRequired ? " *" : ""))" Variant="Variant.Outlined" Style="width: 100%;">
+    @if (Input.InputType == InputType.Boolean)
+    {
+        <RadzenSwitch @bind-Value="_boolValue" />
+    }
+    else if (Input.InputType == InputType.Number)
+    {
+        <RadzenNumeric @bind-Value="_decimalValue" ShowUpDown="false" />
+    }
+    else if (Input.InputType == InputType.Date)
+    {
+        <RadzenDatePicker @bind-Value="_dateValue" />
+    }
+    else
+    {
+        <RadzenTextBox @bind-Value="_stringValue" />
+    }
+</RadzenFormField>
+
+@code {
+    [Parameter, EditorRequired] public TemplateInputDto Input { get; set; } = null!;
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    private bool _boolValue;
+    private decimal _decimalValue;
+    private DateTime? _dateValue;
+    private string _stringValue = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        _boolValue = Value.Equals("true", StringComparison.OrdinalIgnoreCase);
+        _decimalValue = decimal.TryParse(Value, out var n) ? n : 0m;
+        _dateValue = DateTime.TryParse(Value, out var d) ? d : null;
+        _stringValue = Value ?? string.Empty;
+    }
+
+    private async Task OnValueChanged()
+    {
+        var stringValue = Input.InputType switch
+        {
+            InputType.Boolean => _boolValue.ToString().ToLowerInvariant(),
+            InputType.Number => _decimalValue.ToString(),
+            InputType.Date => _dateValue?.ToString("yyyy-MM-dd") ?? "",
+            _ => _stringValue ?? ""
+        };
+        
+        if (stringValue != Value)
+            await ValueChanged.InvokeAsync(stringValue);
+    }
+
+    // These are called by the two-way binding
+    private async Task OnBoolChanged(bool v)
+    {
+        _boolValue = v;
+        await OnValueChanged();
+    }
+
+    private async Task OnDecimalChanged(decimal v)
+    {
+        _decimalValue = v;
+        await OnValueChanged();
+    }
+
+    private async Task OnDateChanged(DateTime? v)
+    {
+        _dateValue = v;
+        await OnValueChanged();
+    }
+
+    private async Task OnStringChanged(string v)
+    {
+        _stringValue = v ?? string.Empty;
+        await OnValueChanged();
+    }
+}

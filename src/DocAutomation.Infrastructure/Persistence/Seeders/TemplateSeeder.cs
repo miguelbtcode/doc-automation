@@ -11,57 +11,42 @@ public static class TemplateSeeder
     private const string Description =
         "Pase a producción de una nueva versión de aplicación web hospedada en IIS. Incluye preparación, verificaciones, copia de archivos, validación post-deploy y plan de reversión.";
 
+    /// <summary>
+    /// Resetea por completo los datos del template (y todos sus deployments asociados)
+    /// en cada arranque de la app, dejando el template recreado desde cero con 0 deployments.
+    ///
+    /// Solo debe usarse en Development. En producción, esto NUNCA debe ejecutarse —
+    /// se llamaría desde Program.cs solo si IsDevelopment().
+    /// </summary>
     public static async Task SeedAsync(DocAutomationDbContext context)
     {
-        // Si ya existe un template ACTIVO con ese slug, no hacemos nada
-        var activeExists = await context.Templates.AnyAsync(t => t.Slug == Slug);
-        if (activeExists)
-            return;
+        // 1. Borramos en orden inverso a las FK:
+        //    DeploymentHistories → DeploymentSteps → Deployments → TemplateInputs → Templates
+        //    Usamos ExecuteDeleteAsync para no pasar nada por el change tracker.
+        await context.DeploymentHistories.ExecuteDeleteAsync();
+        await context.DeploymentSteps.ExecuteDeleteAsync();
+        await context.Deployments.ExecuteDeleteAsync();
+        await context.TemplateInputs.ExecuteDeleteAsync();
+        await context.Templates.IgnoreQueryFilters().ExecuteDeleteAsync();
 
-        // Si existe uno soft-deleted, lo REACTIVAMOS y refrescamos su contenido.
-        // No podemos hard-deletearlo porque puede haber Deployments históricos con FK.
-        var existing = await context
-            .Templates.IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.Slug == Slug);
-
-        if (existing is not null)
-        {
-            await context
-                .TemplateInputs.Where(i => i.TemplateId == existing.Id)
-                .ExecuteDeleteAsync();
-
-            ApplyContent(existing);
-            existing.Version += 1;
-            await context.SaveChangesAsync();
-
-            foreach (var input in BuildInputs(existing.Id))
-                context.TemplateInputs.Add(input);
-            await context.SaveChangesAsync();
-            return;
-        }
-
+        // 2. Insert fresco del template con todos sus inputs
         var template = new Template
         {
             Id = Guid.NewGuid(),
             Slug = Slug,
+            IsActive = true,
+            Name = Name,
+            Description = Description,
+            StepsJson = BuildStepsJson(),
             Version = 1,
             CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
             CreatedBy = "system",
         };
-        ApplyContent(template);
         template.Inputs = BuildInputs(template.Id).ToList();
 
         context.Templates.Add(template);
         await context.SaveChangesAsync();
-    }
-
-    private static void ApplyContent(Template template)
-    {
-        template.IsActive = true;
-        template.Name = Name;
-        template.Description = Description;
-        template.StepsJson = BuildStepsJson();
-        template.UpdatedAt = DateTime.UtcNow;
     }
 
     private static IEnumerable<TemplateInput> BuildInputs(Guid templateId)
@@ -214,13 +199,9 @@ public static class TemplateSeeder
   <li>Una vez dentro del desktop remoto, <strong>verificar que el ambiente sea PRODUCCIÓN</strong> mirando el wallpaper o el banner del servidor.</li>
 </ol>
 
-<blockquote>
-<p><strong>⚠ Importante:</strong> Si no tenés acceso al servidor o las credenciales fueron rotadas, solicitar elevación al equipo de Seguridad antes de iniciar el pase. <strong>NO</strong> pedir credenciales por canales no seguros (mail sin cifrar, chat público).</p>
-</blockquote>
+<div data-panel-type=""warning""><p><strong>⚠ Importante:</strong> Si no tenés acceso al servidor o las credenciales fueron rotadas, solicitar elevación al equipo de Seguridad antes de iniciar el pase. <strong>NO</strong> pedir credenciales por canales no seguros (mail sin cifrar, chat público).</p></div>
 
-<blockquote>
-<p><strong>💡 Nota:</strong> Dejá solo una sesión RDP abierta por servidor para evitar conflictos con otros operadores.</p>
-</blockquote>",
+<div data-panel-type=""note""><p><strong>💡 Nota:</strong> Dejá solo una sesión RDP abierta por servidor para evitar conflictos con otros operadores.</p></div>",
                 },
                 new
                 {
@@ -245,9 +226,7 @@ public static class TemplateSeeder
 <pre><code>Test-Path ""D:\{{ticket_jira}}""
 # Debe devolver: True</code></pre>
 
-<blockquote>
-<p><strong>💡 Convención:</strong> El nombre de la carpeta debe ser exactamente el <strong>número del ticket Jira</strong> para facilitar la trazabilidad. No usar espacios ni caracteres especiales.</p>
-</blockquote>",
+<div data-panel-type=""warning""><p><strong>💡 Convención:</strong> El nombre de la carpeta debe ser exactamente el <strong>número del ticket Jira</strong> para facilitar la trazabilidad. No usar espacios ni caracteres especiales.</p></div>",
                 },
                 new
                 {
@@ -290,9 +269,7 @@ git clone --branch {{rama_bitbucket}} --single-branch &lt;URL_REPO&gt; .</code><
   <li>✔ Archivo <code>README.md</code> o <code>CHANGELOG.md</code> con las notas del release</li>
 </ul>
 
-<blockquote>
-<p><strong>⚠ Importante:</strong> Validar que la rama coincide exactamente con la del ticket Jira. Un deploy con la rama incorrecta es el error más común y causa rollbacks innecesarios.</p>
-</blockquote>",
+<div data-panel-type=""error""><p><strong>⚠ Importante:</strong> Validar que la rama coincide exactamente con la del ticket Jira. Un deploy con la rama incorrecta es el error más común y causa rollbacks innecesarios.</p></div>",
                 },
                 new
                 {
@@ -330,9 +307,7 @@ Microsoft.NETCore.App      {{hosting_bundle_version}} [C:\Program Files\dotnet\s
   </tbody>
 </table>
 
-<blockquote>
-<p><strong>⚠ Nota crítica:</strong> NO proceder con el pase si el Hosting Bundle no cumple el criterio. El sitio no responderá y tendrás que ejecutar la reversión.</p>
-</blockquote>",
+<div data-panel-type=""error""><p><strong>⚠ Nota crítica:</strong> NO proceder con el pase si el Hosting Bundle no cumple el criterio. El sitio no responderá y tendrás que ejecutar la reversión.</p></div>",
                     on_fail = new
                     {
                         steps = new object[]
@@ -348,9 +323,7 @@ Microsoft.NETCore.App      {{hosting_bundle_version}} [C:\Program Files\dotnet\s
 <p>El instalador debe encontrarse en la carpeta de trabajo descargada en el paso 3:</p>
 <p><code>D:\{{ticket_jira}}\dotnet-hosting-{{hosting_bundle_version}}-win.exe</code></p>
 
-<blockquote>
-<p><strong>Si el instalador NO está en la carpeta:</strong> descargarlo de <a href=""https://dotnet.microsoft.com/download/dotnet"">dotnet.microsoft.com/download/dotnet</a> seleccionando <em>ASP.NET Core Runtime → Hosting Bundle → versión {{hosting_bundle_version}}</em>.</p>
-</blockquote>
+<div data-panel-type=""info""><p><strong>Si el instalador NO está en la carpeta:</strong> descargarlo de <a href=""https://dotnet.microsoft.com/download/dotnet"">dotnet.microsoft.com/download/dotnet</a> seleccionando <em>ASP.NET Core Runtime → Hosting Bundle → versión {{hosting_bundle_version}}</em>.</p></div>
 
 <h3>Procedimiento de instalación</h3>
 <ol>
@@ -409,9 +382,7 @@ New-Item -Path $backupPath -ItemType Directory -Force</code></pre>
 <h3>Tamaño estimado</h3>
 <p>El backup debería ocupar aproximadamente lo mismo que el site actual. Verificar que hay espacio suficiente en <code>{{ruta_backup}}</code> antes de ejecutar.</p>
 
-<blockquote>
-<p><strong>⚠ Importante:</strong> El backup es <strong>OBLIGATORIO</strong>. Si no se puede generar por falta de espacio o permisos, <strong>DETENER EL PASE</strong> y escalar al equipo de Infraestructura.</p>
-</blockquote>",
+<div data-panel-type=""error""><p><strong>⚠ Importante:</strong> El backup es <strong>OBLIGATORIO</strong>. Si no se puede generar por falta de espacio o permisos, <strong>DETENER EL PASE</strong> y escalar al equipo de Infraestructura.</p></div>",
                 },
                 new
                 {
@@ -457,13 +428,9 @@ Get-WebAppPoolState -Name ""{{app_pools}}""</code></pre>
   <li>App pool state: <code>Stopped</code></li>
 </ul>
 
-<blockquote>
-<p><strong>💡 Tip:</strong> A veces los application pools tardan unos segundos en detenerse por completo. Si el comando devuelve error de timeout, esperar 10 segundos y verificar el estado antes de continuar.</p>
-</blockquote>
+<div data-panel-type=""note""><p><strong>💡 Tip:</strong> A veces los application pools tardan unos segundos en detenerse por completo. Si el comando devuelve error de timeout, esperar 10 segundos y verificar el estado antes de continuar.</p></div>
 
-<blockquote>
-<p><strong>⚠ Si es un ambiente con múltiples nodos:</strong> Este paso debe ejecutarse en cada nodo del balanceador. Verificar con Infraestructura si aplica.</p>
-</blockquote>",
+<div data-panel-type=""warning""><p><strong>⚠ Si es un ambiente con múltiples nodos:</strong> Este paso debe ejecutarse en cada nodo del balanceador. Verificar con Infraestructura si aplica.</p></div>",
                 },
                 new
                 {
@@ -503,13 +470,9 @@ Get-ChildItem ""{{ruta_fisica_web}}\*.dll"" | Select-Object Name, LastWriteTime 
 <h3>Importante sobre el flag /MIR</h3>
 <p>El flag <code>/MIR</code> (mirror) asegura que los archivos que existen en el destino pero <strong>no en el origen</strong> sean <strong>eliminados</strong>. Esto previene dejar DLLs viejas que puedan causar conflictos de versión.</p>
 
-<blockquote>
-<p><strong>⚠ Cuidado con appsettings.json:</strong> Si el servidor tiene un <code>appsettings.Production.json</code> local que NO viene en el publish, <code>/MIR</code> lo va a borrar. Verificar si aplica y si es así, respaldarlo antes y restaurarlo después del copy.</p>
-</blockquote>
+<div data-panel-type=""warning""><p><strong>⚠ Cuidado con appsettings.json:</strong> Si el servidor tiene un <code>appsettings.Production.json</code> local que NO viene en el publish, <code>/MIR</code> lo va a borrar. Verificar si aplica y si es así, respaldarlo antes y restaurarlo después del copy.</p></div>
 
-<blockquote>
-<p><strong>💡 Archivos transformados:</strong> Si el ambiente usa Config Transform, validar que el <code>web.config</code> copiado tenga los settings correctos de producción.</p>
-</blockquote>",
+<div data-panel-type=""info""><p><strong>💡 Archivos transformados:</strong> Si el ambiente usa Config Transform, validar que el <code>web.config</code> copiado tenga los settings correctos de producción.</p></div>",
                 },
                 new
                 {
@@ -541,9 +504,7 @@ Get-WebAppPoolState -Name ""{{app_pools}}""</code></pre>
   <li>No hay errores en el Event Viewer (<code>eventvwr.msc</code>) relacionados a IIS en los últimos minutos</li>
 </ul>
 
-<blockquote>
-<p><strong>💡 Warm-up:</strong> La primera request al site puede tardar 10-30 segundos porque ASP.NET Core compila vistas y carga el DI container. Eso es normal.</p>
-</blockquote>",
+<div data-panel-type=""info""><p><strong>💡 Warm-up:</strong> La primera request al site puede tardar 10-30 segundos porque ASP.NET Core compila vistas y carga el DI container. Eso es normal.</p></div>",
                 },
                 new
                 {
@@ -591,9 +552,7 @@ Get-WebAppPoolState -Name ""{{app_pools}}""</code></pre>
   </tbody>
 </table>
 
-<blockquote>
-<p><strong>⚠ NO INTENTAR ARREGLAR EN CALIENTE.</strong> Si el sitio no responde correctamente, ejecutar reversión y resolver el problema en ambiente pre-productivo. Intentar fixes en caliente multiplica el tiempo de downtime.</p>
-</blockquote>",
+<div data-panel-type=""warning""><p><strong>⚠ NO INTENTAR ARREGLAR EN CALIENTE.</strong> Si el sitio no responde correctamente, ejecutar reversión y resolver el problema en ambiente pre-productivo. Intentar fixes en caliente multiplica el tiempo de downtime.</p></div>",
                     on_fail = new
                     {
                         steps = new object[]
@@ -613,9 +572,7 @@ Get-WebAppPoolState -Name ""{{app_pools}}""</code></pre>
   <li>Una vez completada la reversión, programar análisis post-mortem para identificar la causa raíz.</li>
 </ol>
 
-<blockquote>
-<p><strong>⚠ Prioridad MÁXIMA:</strong> Un sitio caído en producción afecta directamente a clientes. Cada minuto cuenta.</p>
-</blockquote>",
+<div data-panel-type=""warning""><p><strong>⚠ Prioridad MÁXIMA:</strong> Un sitio caído en producción afecta directamente a clientes. Cada minuto cuenta.</p></div>",
                             },
                         },
                     },
@@ -646,9 +603,7 @@ Get-EventLog -LogName Application -Source ""IIS*"", ""ASP.NET*"", "".NET Runtime
 # Ver procesos w3wp (worker process de IIS)
 Get-Process w3wp | Select-Object Id, CPU, WS, PagedMemorySize</code></pre>
 
-<blockquote>
-<p><strong>⚠ Si durante los 15 minutos aparece algún error significativo, ejecutar Reversión.</strong> Es mejor revertir temprano que tarde.</p>
-</blockquote>",
+<div data-panel-type=""warning""><p><strong>⚠ Si durante los 15 minutos aparece algún error significativo, ejecutar Reversión.</strong> Es mejor revertir temprano que tarde.</p></div>",
                 },
                 new
                 {
@@ -669,9 +624,7 @@ Get-Process w3wp | Select-Object Id, CPU, WS, PagedMemorySize</code></pre>
 <pre><code>Test-Path ""D:\{{ticket_jira}}""
 # Debe devolver: False</code></pre>
 
-<blockquote>
-<p><strong>💡 Nota:</strong> El backup NO se elimina. Se mantiene durante al menos <strong>30 días</strong> en <code>{{ruta_backup}}</code> por si se necesita rollback retroactivo o análisis forense.</p>
-</blockquote>",
+<div data-panel-type=""error""><p><strong>💡 Nota:</strong> El backup NO se elimina. Se mantiene durante al menos <strong>30 días</strong> en <code>{{ruta_backup}}</code> por si se necesita rollback retroactivo o análisis forense.</p></div>",
                 },
                 new
                 {
@@ -710,9 +663,7 @@ Get-Process w3wp | Select-Object Id, CPU, WS, PagedMemorySize</code></pre>
 </ol>
 <pre><code>logoff</code></pre>
 
-<blockquote>
-<p><strong>⚠ Política de seguridad:</strong> No dejar sesiones RDP abiertas al finalizar el pase. Cualquier sesión abandonada puede ser usada por terceros si la PC del operador queda desatendida.</p>
-</blockquote>",
+<div data-panel-type=""warning""><p><strong>⚠ Política de seguridad:</strong> No dejar sesiones RDP abiertas al finalizar el pase. Cualquier sesión abandonada puede ser usada por terceros si la PC del operador queda desatendida.</p></div>",
                 },
             },
             reversion = new object[]
@@ -759,9 +710,7 @@ robocopy $latestBackup ""{{ruta_fisica_web}}"" /MIR /R:3 /W:5 /COPY:DAT /LOG:""D
 </ol>
 <pre><code>Get-ChildItem ""{{ruta_fisica_web}}\web.config"" | Select-Object Name, LastWriteTime</code></pre>
 
-<blockquote>
-<p><strong>⚠ Si el backup no existe o está corrupto:</strong> ESCALAR INMEDIATAMENTE al equipo de Infraestructura. No intentar recuperación manual.</p>
-</blockquote>",
+<div data-panel-type=""error""><p><strong>⚠ Si el backup no existe o está corrupto:</strong> ESCALAR INMEDIATAMENTE al equipo de Infraestructura. No intentar recuperación manual.</p></div>",
                 },
                 new
                 {
@@ -821,9 +770,7 @@ Get-WebAppPoolState -Name ""{{app_pools}}""</code></pre>
   <li>📋 Documentar todos los comandos ejecutados y los errores vistos.</li>
 </ol>
 
-<blockquote>
-<p><strong>⚠ NO tocar más el servidor sin autorización de Infra.</strong> Cualquier acción adicional puede empeorar la situación o dificultar el diagnóstico.</p>
-</blockquote>",
+<div data-panel-type=""warning""><p><strong>⚠ NO tocar más el servidor sin autorización de Infra.</strong> Cualquier acción adicional puede empeorar la situación o dificultar el diagnóstico.</p></div>",
                             },
                         },
                     },
@@ -839,9 +786,7 @@ Get-WebAppPoolState -Name ""{{app_pools}}""</code></pre>
 <h3>Procedimiento</h3>
 <pre><code>Remove-Item -Path ""D:\{{ticket_jira}}"" -Recurse -Force</code></pre>
 
-<blockquote>
-<p><strong>💡 Nota:</strong> El backup en <code>{{ruta_backup}}</code> NO se elimina. Se mantiene para análisis post-mortem.</p>
-</blockquote>",
+<div data-panel-type=""note""><p><strong>💡 Nota:</strong> El backup en <code>{{ruta_backup}}</code> NO se elimina. Se mantiene para análisis post-mortem.</p></div>",
                 },
                 new
                 {
@@ -875,9 +820,7 @@ Get-WebAppPoolState -Name ""{{app_pools}}""</code></pre>
   <li>Re-planificar el pase con las correcciones necesarias.</li>
 </ol>
 
-<blockquote>
-<p><strong>💡 Nota:</strong> No volver a intentar el pase hasta que la causa raíz esté identificada y corregida en ambiente pre-productivo.</p>
-</blockquote>",
+<div data-panel-type=""note""><p><strong>💡 Nota:</strong> No volver a intentar el pase hasta que la causa raíz esté identificada y corregida en ambiente pre-productivo.</p></div>",
                 },
             },
         };

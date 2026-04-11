@@ -232,13 +232,20 @@ secrets/
 .dockerignore.local
 
 # ==============================================================================
-# Node (por si agregás frontend tooling)
+# Node / Editor bundle
 # ==============================================================================
 node_modules/
 npm-debug.log
 yarn-debug.log
 yarn-error.log
+package-lock.json
 package-lock.json.backup
+
+# Bundle output del editor Tiptap (regenerado por esbuild en cada build)
+src/DocAutomation.Web/wwwroot/lib/editor/editor.bundle.js
+src/DocAutomation.Web/wwwroot/lib/editor/editor.bundle.css
+src/DocAutomation.Web/wwwroot/lib/editor/editor.bundle.js.map
+src/DocAutomation.Web/wwwroot/lib/editor/editor.bundle.css.map
 
 # ==============================================================================
 # Project specific

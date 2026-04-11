@@ -1,4 +1,4 @@
-namespace DocAutomation.Web.Services;
+namespace DocAutomation.Web.Services.Ux;
 
 /// <summary>
 /// Event bus para atajos de teclado globales. El MainLayout captura el evento desde JS

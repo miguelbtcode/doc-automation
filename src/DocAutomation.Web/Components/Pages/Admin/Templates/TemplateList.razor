@@ -25,13 +25,13 @@
 <RadzenCard Variant="Variant.Outlined" Class="rz-p-3 rz-mb-3">
     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem">
         <RadzenIcon Icon="search" />
-        <RadzenTextBox @bind-Value="_searchTerm" @bind-Value:after="StateHasChanged"
+        <RadzenTextBox @bind-Value="_searchTerm" @bind-Value:after="OnSearchTermChanged"
                        Placeholder="Buscar por nombre, slug o descripción... (Ctrl+K)"
                        Style="flex: 1; border: none; outline: none; background: transparent;" @ref="_searchBox" />
         @if (!string.IsNullOrWhiteSpace(_searchTerm))
         {
             <RadzenButton Icon="close" Variant="Variant.Text" Size="ButtonSize.Small"
-                          Click="@(() => { _searchTerm = string.Empty; })" />
+                          Click="@(() => { _searchTerm = string.Empty; UpdateFilteredTemplates(); })" />
         }
     </RadzenStack>
 </RadzenCard>
@@ -44,7 +44,7 @@ else
 {
     <RadzenDataGrid Data="@FilteredTemplates" TItem="TemplateListItemDto"
                     AllowPaging="true" PageSize="20" AllowSorting="true" AllowFiltering="true"
-                    Density="Density.Compact">
+                    Density="Density.Compact" Virtualization="true">
         <Columns>
             <RadzenDataGridColumn TItem="TemplateListItemDto" Property="Name" Title="Nombre" />
             <RadzenDataGridColumn TItem="TemplateListItemDto" Property="Slug" Title="Slug" />
@@ -78,13 +78,32 @@ else
     private string _searchTerm = string.Empty;
     private RadzenTextBox _searchBox = null!;
 
-    private IEnumerable<TemplateListItemDto> FilteredTemplates =>
-        string.IsNullOrWhiteSpace(_searchTerm)
+    // Memoized filtered templates - only recomputed when _templates or _searchTerm changes
+    private IReadOnlyList<TemplateListItemDto> _filteredTemplates = Array.Empty<TemplateListItemDto>();
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        UpdateFilteredTemplates();
+    }
+
+    private void UpdateFilteredTemplates()
+    {
+        _filteredTemplates = string.IsNullOrWhiteSpace(_searchTerm)
             ? _templates
             : _templates.Where(t =>
                 t.Name.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||
                 t.Slug.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                (t.Description ?? "").Contains(_searchTerm, StringComparison.OrdinalIgnoreCase));
+                (t.Description ?? "").Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    private IEnumerable<TemplateListItemDto> FilteredTemplates => _filteredTemplates;
+
+    private void OnSearchTermChanged()
+    {
+        UpdateFilteredTemplates();
+        StateHasChanged();
+    }
 
     protected override async Task OnInitializedAsync()
     {

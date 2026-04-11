@@ -20,7 +20,7 @@
                 @if (RecentActions.Actions.Count > 0)
                 {
                     <RadzenButton Text="Limpiar" Variant="Variant.Text" Size="ButtonSize.Small"
-                                  ButtonStyle="ButtonStyle.Light" Click="ClearAsync" />
+                                  ButtonStyle="ButtonStyle.Light" Click="@(() => ClearAsync())" />
                 }
             </div>
 

@@ -44,9 +44,9 @@ else
 
     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Class="rz-mb-4">
         <RadzenButton Text="Copiar como HTML (para pegar en Jira)" Icon="content_copy"
-                      ButtonStyle="ButtonStyle.Primary" Click="CopyAsHtml" />
+                      ButtonStyle="ButtonStyle.Primary" Click="@(() => CopyAsHtml())" />
         <RadzenButton Text="Descargar .html" Icon="download"
-                      ButtonStyle="ButtonStyle.Base" Variant="Variant.Outlined" Click="ExportAsHtml" />
+                      ButtonStyle="ButtonStyle.Base" Variant="Variant.Outlined" Click="@(() => ExportAsHtml())" />
     </RadzenStack>
 
     @RenderSection("Pasos Principales", _document.Steps, "rocket_launch", "var(--rz-primary)",

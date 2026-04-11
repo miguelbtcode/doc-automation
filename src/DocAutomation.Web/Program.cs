@@ -4,6 +4,7 @@ using DocAutomation.Infrastructure.Persistence;
 using DocAutomation.Infrastructure.Persistence.Seeders;
 using DocAutomation.Web.Components;
 using DocAutomation.Web.Services;
+using DocAutomation.Web.Services.Ux;
 using Microsoft.EntityFrameworkCore;
 using Radzen;
 
@@ -20,8 +21,7 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
 builder.Services.AddRadzenComponents();
 
-// UX Polish services (scoped — un instance por circuit)
-builder.Services.AddScoped<DocAutomation.Web.Services.ThemeService>();
+builder.Services.AddScoped<DocAutomation.Web.Services.Ux.ThemeService>();
 builder.Services.AddScoped<KeyboardShortcutService>();
 builder.Services.AddScoped<UnsavedChangesGuard>();
 builder.Services.AddScoped<RecentActionsService>();

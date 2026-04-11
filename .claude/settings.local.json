@@ -18,7 +18,14 @@
       "Bash(mv Deployments Features/Deployments)",
       "Bash(find Features/Templates -name '*.cs' -exec sed -i '' -e 's|namespace DocAutomation\\\\.Application\\\\.Templates\\\\.|namespace DocAutomation.Application.Features.Templates.|g' '{}' ';')",
       "Bash(find Features/Deployments -name '*.cs' -exec sed -i '' -e 's|namespace DocAutomation\\\\.Application\\\\.Deployments\\\\.|namespace DocAutomation.Application.Features.Deployments.|g' '{}' ';')",
-      "Bash(xargs -0 sed -i '' -e 's|DocAutomation\\\\.Application\\\\.Templates\\\\.Commands|DocAutomation.Application.Features.Templates.Commands|g' -e 's|DocAutomation\\\\.Application\\\\.Templates\\\\.Queries|DocAutomation.Application.Features.Templates.Queries|g' -e 's|DocAutomation\\\\.Application\\\\.Templates\\\\.Models|DocAutomation.Application.Features.Templates.Models|g' -e 's|DocAutomation\\\\.Application\\\\.Deployments\\\\.Commands|DocAutomation.Application.Features.Deployments.Commands|g' -e 's|DocAutomation\\\\.Application\\\\.Deployments\\\\.Queries|DocAutomation.Application.Features.Deployments.Queries|g')"
+      "Bash(xargs -0 sed -i '' -e 's|DocAutomation\\\\.Application\\\\.Templates\\\\.Commands|DocAutomation.Application.Features.Templates.Commands|g' -e 's|DocAutomation\\\\.Application\\\\.Templates\\\\.Queries|DocAutomation.Application.Features.Templates.Queries|g' -e 's|DocAutomation\\\\.Application\\\\.Templates\\\\.Models|DocAutomation.Application.Features.Templates.Models|g' -e 's|DocAutomation\\\\.Application\\\\.Deployments\\\\.Commands|DocAutomation.Application.Features.Deployments.Commands|g' -e 's|DocAutomation\\\\.Application\\\\.Deployments\\\\.Queries|DocAutomation.Application.Features.Deployments.Queries|g')",
+      "Bash(sed -i '' 's|Click=\"AddInput\"|Click=\"@\\(\\(\\) => AddInput\\(\\)\\)\"|g' src/DocAutomation.Web/Components/Shared/TemplateForm.razor)",
+      "Bash(sed -i '' 's|Click=\"ClearAsync\"|Click=\"@\\(\\(\\) => ClearAsync\\(\\)\\)\"|g' src/DocAutomation.Web/Components/Shared/RecentActionsMenu.razor)",
+      "Bash(sed -i '' 's|Click=\"AddSubStep\"|Click=\"@\\(\\(\\) => AddSubStep\\(\\)\\)\"|g' src/DocAutomation.Web/Components/Shared/StepEditCard.razor)",
+      "Bash(sed -i '' 's|Click=\"ToggleAsync\"|Click=\"@\\(\\(\\) => ToggleAsync\\(\\)\\)\"|g' src/DocAutomation.Web/Components/Shared/ThemeToggle.razor)",
+      "Bash(sed -i '' 's|Click=\"SaveAsync\"|Click=\"@\\(\\(\\) => SaveAsync\\(\\)\\)\"|g' src/DocAutomation.Web/Components/Pages/Admin/Templates/TemplateEdit.razor src/DocAutomation.Web/Components/Pages/Admin/Templates/TemplateCreate.razor)",
+      "Bash(npm install:*)",
+      "Bash([ ! -f \"node_modules/@atlaskit/icon/svgs/editor/$icon.svg\" ])"
     ]
   }
 }

@@ -1,0 +1,68 @@
+@namespace DocAutomation.Web.Components.Shared
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div @ref="_host" class="da-tiptap-host" style="@($"min-height: {Height};")"></div>
+
+@code {
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "Empezá a escribir... usá \"/\" para comandos rápidos";
+    [Parameter] public string Height { get; set; } = "340px";
+
+    private ElementReference _host;
+    private DotNetObjectReference<TiptapEditor>? _dotNetRef;
+    private string? _editorId;
+    private string? _lastSyncedValue;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                _dotNetRef = DotNetObjectReference.Create(this);
+                _editorId = await JS.InvokeAsync<string>(
+                    "tiptapEditor.create",
+                    _host,
+                    Value ?? string.Empty,
+                    _dotNetRef,
+                    Placeholder);
+                _lastSyncedValue = Value;
+            }
+            catch (JSDisconnectedException) { }
+        }
+        else if (_editorId is not null && Value != _lastSyncedValue)
+        {
+            // El padre cambió el Value externamente — sincronizamos con el editor
+            try
+            {
+                await JS.InvokeVoidAsync("tiptapEditor.setHtml", _editorId, Value ?? string.Empty);
+                _lastSyncedValue = Value;
+            }
+            catch (JSDisconnectedException) { }
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnContentChanged(string html)
+    {
+        _lastSyncedValue = html;
+        // Only notify parent - do NOT mutate the [Parameter] directly
+        if (ValueChanged.HasDelegate)
+            await ValueChanged.InvokeAsync(html);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_editorId is not null)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("tiptapEditor.destroy", _editorId);
+            }
+            catch (JSDisconnectedException) { }
+        }
+        _dotNetRef?.Dispose();
+    }
+}

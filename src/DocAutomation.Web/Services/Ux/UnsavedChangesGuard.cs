@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.JSInterop;
 using Radzen;
 
-namespace DocAutomation.Web.Services;
+namespace DocAutomation.Web.Services.Ux;
 
 /// <summary>
 /// Intercepta navegaciones internas y el cierre del browser cuando hay cambios sin guardar.

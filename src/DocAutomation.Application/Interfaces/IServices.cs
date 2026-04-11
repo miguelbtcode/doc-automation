@@ -1,3 +1,5 @@
+using DocAutomation.Application.Features.Templates.Models;
+
 namespace DocAutomation.Application.Interfaces;
 
 public record JsonValidationResult(bool IsValid, IReadOnlyList<string> Errors)
@@ -10,4 +12,9 @@ public record JsonValidationResult(bool IsValid, IReadOnlyList<string> Errors)
 public interface IJsonValidator
 {
     JsonValidationResult ValidateTemplateSteps(string stepsJson);
+}
+
+public interface ITemplateRenderer
+{
+    TemplateDocument Render(string stepsJson, IReadOnlyDictionary<string, string> inputValues);
 }

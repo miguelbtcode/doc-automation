@@ -4,13 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace DocAutomation.Application.Common.Cqrs;
 
 /// <summary>
-/// Implementación del mediador. Resuelve el handler concreto vía DI, corre los
-/// pipeline behaviors registrados y devuelve la respuesta.
-///
-/// Usa el <c>RequestHandlerWrapper</c> pattern: la primera llamada con un request type
-/// crea un wrapper tipado vía Activator (reflection), pero el resultado se cachea en un
-/// <see cref="ConcurrentDictionary{TKey,TValue}"/>, así las llamadas siguientes son dispatch
-/// totalmente type-safe sin reflection.
+/// Mediador CQRS. Resuelve handlers via DI, aplica pipeline behaviors en orden inverso
+/// y cachea los wrappers tipados en un ConcurrentDictionary para evitar reflection repetido.
 /// </summary>
 public class Mediator(IServiceProvider serviceProvider) : IMediator
 {
@@ -83,8 +78,7 @@ public class Mediator(IServiceProvider serviceProvider) : IMediator
             Task<TResponse> HandlerDelegate() =>
                 handler.Handle((TRequest)request, cancellationToken);
 
-            // Los behaviors se aplican en orden inverso para que el primero registrado
-            // sea el más externo del pipeline (se ejecuta primero al entrar y último al salir).
+            // Behaviors en orden inverso: el primero registrado es el más externo del pipeline.
             var behaviors = serviceProvider
                 .GetServices<IPipelineBehavior<TRequest, TResponse>>()
                 .Reverse()
