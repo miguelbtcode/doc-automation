@@ -11,7 +11,8 @@ public record CreateTemplateCommand(
     string? Description,
     string StepsJson,
     IReadOnlyList<TemplateInputDto> Inputs,
-    string CreatedBy
+    string CreatedBy,
+    TemplateType Type = TemplateType.Deployment
 ) : ICommand<Guid>;
 
 public class CreateTemplateCommandHandler(ITemplateRepository repository, IUnitOfWork unitOfWork)
@@ -25,6 +26,7 @@ public class CreateTemplateCommandHandler(ITemplateRepository repository, IUnitO
         var template = new Template
         {
             Id = Guid.NewGuid(),
+            Type = request.Type,
             Slug = request.Slug.Trim().ToLowerInvariant(),
             Name = request.Name.Trim(),
             Description = request.Description?.Trim(),

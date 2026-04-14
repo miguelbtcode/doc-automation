@@ -4,7 +4,10 @@ namespace DocAutomation.Application.Interfaces;
 
 public interface ITemplateRepository
 {
-    Task<IReadOnlyList<Template>> GetAllAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<Template>> GetAllAsync(
+        TemplateType? type = null,
+        CancellationToken ct = default
+    );
     Task<Template?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<Template?> GetBySlugAsync(string slug, CancellationToken ct = default);
     Task<bool> SlugExistsAsync(string slug, Guid? excludeId = null, CancellationToken ct = default);
@@ -26,7 +29,10 @@ public interface ITemplateRepository
 
 public interface IDeploymentRepository
 {
-    Task<IReadOnlyList<Deployment>> GetAllAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<Deployment>> GetAllAsync(
+        TemplateType? type = null,
+        CancellationToken ct = default
+    );
     Task<Deployment?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task AddAsync(Deployment deployment, CancellationToken ct = default);
     Task<DeploymentStep?> GetStepAsync(

@@ -1,4 +1,5 @@
 @page "/admin/templates/preview/{Id:guid}"
+@page "/admin/work-orders/templates/preview/{Id:guid}"
 @using DocAutomation.Application.Features.Templates.Models
 @using DocAutomation.Application.Features.Deployments.Models
 @using DocAutomation.Application.Features.Templates.Queries.GetTemplateById
@@ -11,7 +12,7 @@
 <PageTitle>Preview Template</PageTitle>
 
 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem" Class="rz-mb-4">
-    <RadzenButton Icon="arrow_back" Variant="Variant.Text" Click="@(() => Nav.NavigateTo("/admin/templates"))" />
+    <RadzenButton Icon="arrow_back" Variant="Variant.Text" Click="@(() => Nav.NavigateTo(ListPath))" />
     <RadzenText TextStyle="TextStyle.H4">Preview del Template</RadzenText>
 </RadzenStack>
 
@@ -77,6 +78,10 @@ else
     private StepsEditorModel _stepsModel = new();
     private bool _loading = true;
 
+    private string ListPath => Nav.Uri.Contains("/work-orders/")
+        ? "/admin/work-orders/templates"
+        : "/admin/templates";
+
     protected override async Task OnInitializedAsync()
     {
         _template = await Mediator.Send(new GetTemplateByIdQuery(Id));
@@ -130,7 +135,7 @@ else
                 {
                     var bs = 0;
                     body.OpenElement(bs++, "div");
-                    body.AddAttribute(bs++, "class", "rz-p-3");
+                    body.AddAttribute(bs++, "class", "da-step-description rz-p-3");
                     body.AddMarkupContent(bs++, string.IsNullOrWhiteSpace(captured.Description) ? "<p><em>Sin descripción.</em></p>" : captured.Description);
 
                     if (captured.OnFailSteps.Count > 0)
@@ -152,6 +157,7 @@ else
                             body.AddContent(bs++, $"{capturedIdx}.{subIdx} {sub.Title}");
                             body.CloseElement();
                             body.OpenElement(bs++, "div");
+                            body.AddAttribute(bs++, "class", "da-step-description");
                             body.AddAttribute(bs++, "style", "margin-top: 0.5rem;");
                             body.AddMarkupContent(bs++, sub.Description);
                             body.CloseElement();

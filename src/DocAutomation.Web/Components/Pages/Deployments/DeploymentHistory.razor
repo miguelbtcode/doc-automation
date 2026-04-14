@@ -1,4 +1,5 @@
 @page "/deployments/history"
+@page "/work-orders/history"
 @using DocAutomation.Application.Features.Deployments.Queries.GetAllDeployments
 @using DocAutomation.Application.Features.Templates.Models
 @using DocAutomation.Application.Features.Deployments.Models
@@ -6,15 +7,16 @@
 @using DocAutomation.Application.Common.Cqrs
 @inject IMediator Mediator
 @inject NavigationManager Nav
+@implements IDisposable
 
-<PageTitle>Historial de Pases</PageTitle>
+<PageTitle>@PageTitle</PageTitle>
 
-<PageHeader Title="Historial de Pases"
-            Subtitle="Todos los MVPs generados a partir de templates"
-            Breadcrumbs="@(new List<PageHeader.BreadcrumbItem> { new("Pases"), new("Historial") })">
+<PageHeader Title="@PageTitle"
+            Subtitle="@Subtitle"
+            Breadcrumbs="@(new List<PageHeader.BreadcrumbItem> { new(SectionLabel), new("Historial") })">
     <Actions>
-        <RadzenButton Text="Nuevo Pase" Icon="add" ButtonStyle="ButtonStyle.Primary"
-                      Click="@(() => Nav.NavigateTo("/deployments/new"))" />
+        <RadzenButton Text="@NewBtnLabel" Icon="add" ButtonStyle="ButtonStyle.Primary"
+                      Click="@(() => Nav.NavigateTo(NewPath))" />
     </Actions>
 </PageHeader>
 
@@ -35,7 +37,7 @@
         <RadzenDataGridColumn TItem="DeploymentListItemDto" Title="" Width="80px" Sortable="false" Filterable="false">
             <Template Context="d">
                 <RadzenButton Icon="visibility" Variant="Variant.Text" Size="ButtonSize.Small"
-                              Click="@(() => Nav.NavigateTo($"/deployments/{d.Id}"))" />
+                              Click="@(() => Nav.NavigateTo($"{DetailBasePath}/{d.Id}"))" />
             </Template>
         </RadzenDataGridColumn>
     </Columns>
@@ -47,11 +49,45 @@
 @code {
     private IReadOnlyList<DeploymentListItemDto> _deployments = Array.Empty<DeploymentListItemDto>();
     private bool _loading = true;
+    private bool _isWorkOrders;
+
+    private TemplateType SectionType => _isWorkOrders ? TemplateType.WorkOrder : TemplateType.Deployment;
+    private string PageTitle => _isWorkOrders ? "Historial de Work Orders" : "Historial de Pases";
+    private string Subtitle => _isWorkOrders
+        ? "Todas las Work Orders generadas"
+        : "Todos los MVPs generados a partir de templates";
+    private string SectionLabel => _isWorkOrders ? "Work Orders" : "Pases";
+    private string NewPath => _isWorkOrders ? "/work-orders/new" : "/deployments/new";
+    private string NewBtnLabel => _isWorkOrders ? "Nueva WO" : "Nuevo Pase";
+    private string DetailBasePath => _isWorkOrders ? "/work-orders" : "/deployments";
 
     protected override async Task OnInitializedAsync()
     {
-        _deployments = await Mediator.Send(new GetAllDeploymentsQuery());
+        _isWorkOrders = Nav.Uri.Contains("/work-orders/");
+        Nav.LocationChanged += OnLocationChanged;
+        await LoadAsync();
+    }
+
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        var isWorkOrders = e.Location.Contains("/work-orders/");
+        if (isWorkOrders == _isWorkOrders) return;
+
+        _isWorkOrders = isWorkOrders;
+        await LoadAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _deployments = await Mediator.Send(new GetAllDeploymentsQuery(SectionType));
         _loading = false;
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
     }
 
     private static BadgeStyle StatusBadge(DeploymentStatus status) => status switch

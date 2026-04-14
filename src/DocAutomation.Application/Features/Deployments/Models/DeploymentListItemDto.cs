@@ -5,6 +5,7 @@ namespace DocAutomation.Application.Features.Deployments.Models;
 public class DeploymentListItemDto
 {
     public Guid Id { get; set; }
+    public TemplateType TemplateType { get; set; }
     public string TemplateSlug { get; set; } = string.Empty;
     public string TemplateName { get; set; } = string.Empty;
     public int TemplateVersion { get; set; }

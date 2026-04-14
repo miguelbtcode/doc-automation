@@ -4,7 +4,8 @@ using DocAutomation.Application.Interfaces;
 
 namespace DocAutomation.Application.Features.Templates.Queries.GetAllTemplates;
 
-public record GetAllTemplatesQuery : IQuery<IReadOnlyList<TemplateListItemDto>>;
+public record GetAllTemplatesQuery(TemplateType? Type = null)
+    : IQuery<IReadOnlyList<TemplateListItemDto>>;
 
 public class GetAllTemplatesQueryHandler(ITemplateRepository repository)
     : IQueryHandler<GetAllTemplatesQuery, IReadOnlyList<TemplateListItemDto>>
@@ -14,12 +15,13 @@ public class GetAllTemplatesQueryHandler(ITemplateRepository repository)
         CancellationToken cancellationToken
     )
     {
-        var templates = await repository.GetAllAsync(cancellationToken);
+        var templates = await repository.GetAllAsync(request.Type, cancellationToken);
 
         return templates
             .Select(t => new TemplateListItemDto
             {
                 Id = t.Id,
+                Type = t.Type,
                 Slug = t.Slug,
                 Name = t.Name,
                 Description = t.Description,

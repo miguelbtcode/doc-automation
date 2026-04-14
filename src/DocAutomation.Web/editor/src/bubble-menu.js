@@ -3,11 +3,11 @@
 import { iconHtml } from './icons.js';
 
 const PANEL_TYPES = [
-    { key: 'info', label: 'Info', color: '#0747A6' },
-    { key: 'note', label: 'Note', color: '#403294' },
-    { key: 'success', label: 'Tip', color: '#006644' },
-    { key: 'warning', label: 'Warning', color: '#FF8B00' },
-    { key: 'error', label: 'Error', color: '#BF2600' }
+    { key: 'info',    matIcon: 'info',         label: 'Info',    color: '#0747A6' },
+    { key: 'note',    matIcon: 'description',   label: 'Note',    color: '#403294' },
+    { key: 'success', matIcon: 'check_circle',  label: 'Tip',     color: '#006644' },
+    { key: 'warning', matIcon: 'warning',        label: 'Warning', color: '#FF8B00' },
+    { key: 'error',   matIcon: 'cancel',         label: 'Error',   color: '#BF2600' }
 ];
 
 export function buildPanelBubbleMenu(container, editor) {
@@ -21,7 +21,7 @@ export function buildPanelBubbleMenu(container, editor) {
     dropdownBtn.type = 'button';
     dropdownBtn.className = 'da-bubble-dropdown-btn da-panel-type-btn';
     dropdownBtn.title = 'Cambiar tipo de panel';
-    dropdownBtn.innerHTML = `<span class="da-panel-type-icon">${iconHtml('info', 18)}</span>`;
+    dropdownBtn.innerHTML = `<span class="da-panel-type-icon"><span class="material-icons" style="font-size:18px;line-height:1">info</span></span>`;
 
     const dropdownMenu = document.createElement('div');
     dropdownMenu.className = 'da-bubble-dropdown-menu';
@@ -32,7 +32,7 @@ export function buildPanelBubbleMenu(container, editor) {
         item.className = `da-bubble-dropdown-item da-panel-dropdown-item`;
         item.dataset.panelType = panel.key;
         item.innerHTML = `
-            <span class="da-panel-item-icon" style="color: ${panel.color}">${iconHtml(panel.key, 18)}</span>
+            <span class="da-bubble-dropdown-icon" style="color: ${panel.color}">${panel.matIcon ? `<span class="material-icons" style="font-size:16px;line-height:1">${panel.matIcon}</span>` : ''}</span>
             <span class="da-panel-item-label">${panel.label}</span>
         `;
         item.addEventListener('click', e => {
@@ -78,7 +78,8 @@ export function buildPanelBubbleMenu(container, editor) {
         const currentType = editorInstance.getAttributes('panel').panelType || 'info';
         const panelInfo = PANEL_TYPES.find(p => p.key === currentType) || PANEL_TYPES[0];
         const iconSpan = dropdownBtn.querySelector('.da-panel-type-icon');
-        iconSpan.innerHTML = iconHtml(currentType, 18);
+        const iconName = panelInfo.matIcon ?? 'edit_note';
+        iconSpan.innerHTML = `<span class="material-icons" style="font-size:18px;line-height:1">${iconName}</span>`;
         iconSpan.style.color = panelInfo.color;
     }
 

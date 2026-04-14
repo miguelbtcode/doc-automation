@@ -171,6 +171,7 @@ else
                                 body.AddContent(bs++, $"{capturedIdx}.{subIdx} {sub.Title}");
                                 body.CloseElement();
                                 body.OpenElement(bs++, "div");
+                                body.AddAttribute(bs++, "class", "da-step-description");
                                 body.AddAttribute(bs++, "style", "margin-top: 0.5rem;");
                                 body.AddMarkupContent(bs++, sub.Description ?? "");
                                 body.CloseElement();

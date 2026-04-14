@@ -6,9 +6,15 @@ namespace DocAutomation.Infrastructure.Persistence.Repositories;
 
 public class DeploymentRepository(DocAutomationDbContext context) : IDeploymentRepository
 {
-    public async Task<IReadOnlyList<Deployment>> GetAllAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<Deployment>> GetAllAsync(
+        TemplateType? type = null,
+        CancellationToken ct = default
+    )
     {
-        return await context.Deployments.OrderByDescending(d => d.StartedAt).ToListAsync(ct);
+        var query = context.Deployments.AsQueryable();
+        if (type.HasValue)
+            query = query.Where(d => d.TemplateType == type.Value);
+        return await query.OrderByDescending(d => d.StartedAt).ToListAsync(ct);
     }
 
     public Task<Deployment?> GetByIdAsync(Guid id, CancellationToken ct = default)

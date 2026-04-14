@@ -29,10 +29,11 @@ public static class TemplateSeeder
         await context.TemplateInputs.ExecuteDeleteAsync();
         await context.Templates.IgnoreQueryFilters().ExecuteDeleteAsync();
 
-        // 2. Insert fresco del template con todos sus inputs
-        var template = new Template
+        // 2. Insert fresco de ambos templates
+        var deploymentTemplate = new Template
         {
             Id = Guid.NewGuid(),
+            Type = TemplateType.Deployment,
             Slug = Slug,
             IsActive = true,
             Name = Name,
@@ -43,9 +44,27 @@ public static class TemplateSeeder
             UpdatedAt = DateTime.UtcNow,
             CreatedBy = "system",
         };
-        template.Inputs = BuildInputs(template.Id).ToList();
+        deploymentTemplate.Inputs = BuildInputs(deploymentTemplate.Id).ToList();
 
-        context.Templates.Add(template);
+        var workOrderTemplate = new Template
+        {
+            Id = Guid.NewGuid(),
+            Type = TemplateType.WorkOrder,
+            Slug = "reinicio-servicio-windows",
+            IsActive = true,
+            Name = "Reinicio de Servicio Windows",
+            Description =
+                "Work Order para reiniciar un servicio de Windows en un servidor específico. Incluye verificación previa, reinicio y validación del estado posterior.",
+            StepsJson = BuildWorkOrderStepsJson(),
+            Version = 1,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            CreatedBy = "system",
+        };
+        workOrderTemplate.Inputs = BuildWorkOrderInputs(workOrderTemplate.Id).ToList();
+
+        context.Templates.Add(deploymentTemplate);
+        context.Templates.Add(workOrderTemplate);
         await context.SaveChangesAsync();
     }
 
@@ -199,9 +218,9 @@ public static class TemplateSeeder
   <li>Una vez dentro del desktop remoto, <strong>verificar que el ambiente sea PRODUCCIÓN</strong> mirando el wallpaper o el banner del servidor.</li>
 </ol>
 
-<div data-panel-type=""warning""><p><strong>⚠ Importante:</strong> Si no tenés acceso al servidor o las credenciales fueron rotadas, solicitar elevación al equipo de Seguridad antes de iniciar el pase. <strong>NO</strong> pedir credenciales por canales no seguros (mail sin cifrar, chat público).</p></div>
+<div data-panel-type=""warning""><p><strong>Importante:</strong> Si no tenés acceso al servidor o las credenciales fueron rotadas, solicitar elevación al equipo de Seguridad antes de iniciar el pase. <strong>NO</strong> pedir credenciales por canales no seguros (mail sin cifrar, chat público).</p></div>
 
-<div data-panel-type=""note""><p><strong>💡 Nota:</strong> Dejá solo una sesión RDP abierta por servidor para evitar conflictos con otros operadores.</p></div>",
+<div data-panel-type=""note""><p><strong>Nota:</strong> Dejá solo una sesión RDP abierta por servidor para evitar conflictos con otros operadores.</p></div>",
                 },
                 new
                 {
@@ -226,7 +245,7 @@ public static class TemplateSeeder
 <pre><code>Test-Path ""D:\{{ticket_jira}}""
 # Debe devolver: True</code></pre>
 
-<div data-panel-type=""warning""><p><strong>💡 Convención:</strong> El nombre de la carpeta debe ser exactamente el <strong>número del ticket Jira</strong> para facilitar la trazabilidad. No usar espacios ni caracteres especiales.</p></div>",
+<div data-panel-type=""warning""><p><strong>Convención:</strong> El nombre de la carpeta debe ser exactamente el <strong>número del ticket Jira</strong> para facilitar la trazabilidad. No usar espacios ni caracteres especiales.</p></div>",
                 },
                 new
                 {
@@ -263,13 +282,13 @@ git clone --branch {{rama_bitbucket}} --single-branch &lt;URL_REPO&gt; .</code><
 <h3>Verificación del contenido</h3>
 <p>Una vez descargados los archivos, validar que estén presentes en la carpeta:</p>
 <ul>
-  <li>✔ Carpeta <code>publish</code> (o archivos <code>.dll</code>, <code>web.config</code>, <code>wwwroot</code>)</li>
-  <li>✔ Instalador del Hosting Bundle (<code>dotnet-hosting-*.exe</code>) — <strong>sólo si aplica para esta versión</strong></li>
-  <li>✔ Scripts SQL de migración (si el pase incluye cambios de base)</li>
-  <li>✔ Archivo <code>README.md</code> o <code>CHANGELOG.md</code> con las notas del release</li>
+  <li>Carpeta <code>publish</code> (o archivos <code>.dll</code>, <code>web.config</code>, <code>wwwroot</code>)</li>
+  <li>Instalador del Hosting Bundle (<code>dotnet-hosting-*.exe</code>) — <strong>sólo si aplica para esta versión</strong></li>
+  <li>Scripts SQL de migración (si el pase incluye cambios de base)</li>
+  <li>Archivo <code>README.md</code> o <code>CHANGELOG.md</code> con las notas del release</li>
 </ul>
 
-<div data-panel-type=""error""><p><strong>⚠ Importante:</strong> Validar que la rama coincide exactamente con la del ticket Jira. Un deploy con la rama incorrecta es el error más común y causa rollbacks innecesarios.</p></div>",
+<div data-panel-type=""error""><p><strong>Importante:</strong> Validar que la rama coincide exactamente con la del ticket Jira. Un deploy con la rama incorrecta es el error más común y causa rollbacks innecesarios.</p></div>",
                 },
                 new
                 {
@@ -302,12 +321,12 @@ Microsoft.NETCore.App      {{hosting_bundle_version}} [C:\Program Files\dotnet\s
     <tr><th>Resultado</th><th>Acción</th></tr>
   </thead>
   <tbody>
-    <tr><td>✅ La versión instalada es <strong>igual o mayor</strong> a la esperada</td><td>Marcar como <strong>Pasa</strong> y continuar al paso 5</td></tr>
-    <tr><td>❌ La versión instalada es <strong>menor</strong> o no está instalada</td><td>Marcar como <strong>Falla</strong> — se desplegarán los pasos correctivos</td></tr>
+    <tr><td>La versión instalada es <strong>igual o mayor</strong> a la esperada</td><td>Marcar como <strong>Pasa</strong> y continuar al paso 5</td></tr>
+    <tr><td>La versión instalada es <strong>menor</strong> o no está instalada</td><td>Marcar como <strong>Falla</strong> — se desplegarán los pasos correctivos</td></tr>
   </tbody>
 </table>
 
-<div data-panel-type=""error""><p><strong>⚠ Nota crítica:</strong> NO proceder con el pase si el Hosting Bundle no cumple el criterio. El sitio no responderá y tendrás que ejecutar la reversión.</p></div>",
+<div data-panel-type=""error""><p><strong>Nota crítica:</strong> NO proceder con el pase si el Hosting Bundle no cumple el criterio. El sitio no responderá y tendrás que ejecutar la reversión.</p></div>",
                     on_fail = new
                     {
                         steps = new object[]
@@ -382,7 +401,7 @@ New-Item -Path $backupPath -ItemType Directory -Force</code></pre>
 <h3>Tamaño estimado</h3>
 <p>El backup debería ocupar aproximadamente lo mismo que el site actual. Verificar que hay espacio suficiente en <code>{{ruta_backup}}</code> antes de ejecutar.</p>
 
-<div data-panel-type=""error""><p><strong>⚠ Importante:</strong> El backup es <strong>OBLIGATORIO</strong>. Si no se puede generar por falta de espacio o permisos, <strong>DETENER EL PASE</strong> y escalar al equipo de Infraestructura.</p></div>",
+<div data-panel-type=""error""><p><strong>Importante:</strong> El backup es <strong>OBLIGATORIO</strong>. Si no se puede generar por falta de espacio o permisos, <strong>DETENER EL PASE</strong> y escalar al equipo de Infraestructura.</p></div>",
                 },
                 new
                 {
@@ -428,9 +447,9 @@ Get-WebAppPoolState -Name ""{{app_pools}}""</code></pre>
   <li>App pool state: <code>Stopped</code></li>
 </ul>
 
-<div data-panel-type=""note""><p><strong>💡 Tip:</strong> A veces los application pools tardan unos segundos en detenerse por completo. Si el comando devuelve error de timeout, esperar 10 segundos y verificar el estado antes de continuar.</p></div>
+<div data-panel-type=""note""><p><strong>Tip:</strong> A veces los application pools tardan unos segundos en detenerse por completo. Si el comando devuelve error de timeout, esperar 10 segundos y verificar el estado antes de continuar.</p></div>
 
-<div data-panel-type=""warning""><p><strong>⚠ Si es un ambiente con múltiples nodos:</strong> Este paso debe ejecutarse en cada nodo del balanceador. Verificar con Infraestructura si aplica.</p></div>",
+<div data-panel-type=""warning""><p><strong>Si es un ambiente con múltiples nodos:</strong> Este paso debe ejecutarse en cada nodo del balanceador. Verificar con Infraestructura si aplica.</p></div>",
                 },
                 new
                 {
@@ -470,9 +489,9 @@ Get-ChildItem ""{{ruta_fisica_web}}\*.dll"" | Select-Object Name, LastWriteTime 
 <h3>Importante sobre el flag /MIR</h3>
 <p>El flag <code>/MIR</code> (mirror) asegura que los archivos que existen en el destino pero <strong>no en el origen</strong> sean <strong>eliminados</strong>. Esto previene dejar DLLs viejas que puedan causar conflictos de versión.</p>
 
-<div data-panel-type=""warning""><p><strong>⚠ Cuidado con appsettings.json:</strong> Si el servidor tiene un <code>appsettings.Production.json</code> local que NO viene en el publish, <code>/MIR</code> lo va a borrar. Verificar si aplica y si es así, respaldarlo antes y restaurarlo después del copy.</p></div>
+<div data-panel-type=""warning""><p><strong>Cuidado con appsettings.json:</strong> Si el servidor tiene un <code>appsettings.Production.json</code> local que NO viene en el publish, <code>/MIR</code> lo va a borrar. Verificar si aplica y si es así, respaldarlo antes y restaurarlo después del copy.</p></div>
 
-<div data-panel-type=""info""><p><strong>💡 Archivos transformados:</strong> Si el ambiente usa Config Transform, validar que el <code>web.config</code> copiado tenga los settings correctos de producción.</p></div>",
+<div data-panel-type=""info""><p><strong>Archivos transformados:</strong> Si el ambiente usa Config Transform, validar que el <code>web.config</code> copiado tenga los settings correctos de producción.</p></div>",
                 },
                 new
                 {
@@ -504,7 +523,7 @@ Get-WebAppPoolState -Name ""{{app_pools}}""</code></pre>
   <li>No hay errores en el Event Viewer (<code>eventvwr.msc</code>) relacionados a IIS en los últimos minutos</li>
 </ul>
 
-<div data-panel-type=""info""><p><strong>💡 Warm-up:</strong> La primera request al site puede tardar 10-30 segundos porque ASP.NET Core compila vistas y carga el DI container. Eso es normal.</p></div>",
+<div data-panel-type=""info""><p><strong>Warm-up:</strong> La primera request al site puede tardar 10-30 segundos porque ASP.NET Core compila vistas y carga el DI container. Eso es normal.</p></div>",
                 },
                 new
                 {
@@ -547,12 +566,12 @@ Get-WebAppPoolState -Name ""{{app_pools}}""</code></pre>
     <tr><th>Resultado</th><th>Acción</th></tr>
   </thead>
   <tbody>
-    <tr><td>✅ Todos los checks pasan</td><td>Marcar como <strong>Pasa</strong> y continuar al Post-Pase</td></tr>
-    <tr><td>❌ Cualquier check falla</td><td>Marcar como <strong>Falla</strong> e iniciar inmediatamente la sección de <strong>Reversión</strong></td></tr>
+    <tr><td>Todos los checks pasan</td><td>Marcar como <strong>Pasa</strong> y continuar al Post-Pase</td></tr>
+    <tr><td>Cualquier check falla</td><td>Marcar como <strong>Falla</strong> e iniciar inmediatamente la sección de <strong>Reversión</strong></td></tr>
   </tbody>
 </table>
 
-<div data-panel-type=""warning""><p><strong>⚠ NO INTENTAR ARREGLAR EN CALIENTE.</strong> Si el sitio no responde correctamente, ejecutar reversión y resolver el problema en ambiente pre-productivo. Intentar fixes en caliente multiplica el tiempo de downtime.</p></div>",
+<div data-panel-type=""warning""><p><strong>NO INTENTAR ARREGLAR EN CALIENTE.</strong> Si el sitio no responde correctamente, ejecutar reversión y resolver el problema en ambiente pre-productivo. Intentar fixes en caliente multiplica el tiempo de downtime.</p></div>",
                     on_fail = new
                     {
                         steps = new object[]
@@ -572,7 +591,7 @@ Get-WebAppPoolState -Name ""{{app_pools}}""</code></pre>
   <li>Una vez completada la reversión, programar análisis post-mortem para identificar la causa raíz.</li>
 </ol>
 
-<div data-panel-type=""warning""><p><strong>⚠ Prioridad MÁXIMA:</strong> Un sitio caído en producción afecta directamente a clientes. Cada minuto cuenta.</p></div>",
+<div data-panel-type=""warning""><p><strong>Prioridad MÁXIMA:</strong> Un sitio caído en producción afecta directamente a clientes. Cada minuto cuenta.</p></div>",
                             },
                         },
                     },
@@ -603,7 +622,7 @@ Get-EventLog -LogName Application -Source ""IIS*"", ""ASP.NET*"", "".NET Runtime
 # Ver procesos w3wp (worker process de IIS)
 Get-Process w3wp | Select-Object Id, CPU, WS, PagedMemorySize</code></pre>
 
-<div data-panel-type=""warning""><p><strong>⚠ Si durante los 15 minutos aparece algún error significativo, ejecutar Reversión.</strong> Es mejor revertir temprano que tarde.</p></div>",
+<div data-panel-type=""warning""><p><strong>Si durante los 15 minutos aparece algún error significativo, ejecutar Reversión.</strong> Es mejor revertir temprano que tarde.</p></div>",
                 },
                 new
                 {
@@ -624,7 +643,7 @@ Get-Process w3wp | Select-Object Id, CPU, WS, PagedMemorySize</code></pre>
 <pre><code>Test-Path ""D:\{{ticket_jira}}""
 # Debe devolver: False</code></pre>
 
-<div data-panel-type=""error""><p><strong>💡 Nota:</strong> El backup NO se elimina. Se mantiene durante al menos <strong>30 días</strong> en <code>{{ruta_backup}}</code> por si se necesita rollback retroactivo o análisis forense.</p></div>",
+<div data-panel-type=""error""><p><strong>Nota:</strong> El backup NO se elimina. Se mantiene durante al menos <strong>30 días</strong> en <code>{{ruta_backup}}</code> por si se necesita rollback retroactivo o análisis forense.</p></div>",
                 },
                 new
                 {
@@ -636,12 +655,12 @@ Get-Process w3wp | Select-Object Id, CPU, WS, PagedMemorySize</code></pre>
 
 <h3>Información a documentar en el ticket</h3>
 <ul>
-  <li>✔ <strong>Fecha y hora exacta</strong> del pase (inicio y fin)</li>
-  <li>✔ <strong>Versión desplegada</strong>: rama <code>{{rama_bitbucket}}</code></li>
-  <li>✔ <strong>Servidor afectado</strong>: <code>{{servidor}}</code></li>
-  <li>✔ <strong>Ruta del backup</strong>: <code>{{ruta_backup}}\{{ticket_jira}}_backup_*</code></li>
-  <li>✔ <strong>Screenshot</strong> de la página funcionando post-deploy</li>
-  <li>✔ <strong>Resultado del smoke test</strong></li>
+  <li><strong>Fecha y hora exacta</strong> del pase (inicio y fin)</li>
+  <li><strong>Versión desplegada</strong>: rama <code>{{rama_bitbucket}}</code></li>
+  <li><strong>Servidor afectado</strong>: <code>{{servidor}}</code></li>
+  <li><strong>Ruta del backup</strong>: <code>{{ruta_backup}}\{{ticket_jira}}_backup_*</code></li>
+  <li><strong>Screenshot</strong> de la página funcionando post-deploy</li>
+  <li><strong>Resultado del smoke test</strong></li>
 </ul>
 
 <h3>Transición del estado</h3>
@@ -663,7 +682,7 @@ Get-Process w3wp | Select-Object Id, CPU, WS, PagedMemorySize</code></pre>
 </ol>
 <pre><code>logoff</code></pre>
 
-<div data-panel-type=""warning""><p><strong>⚠ Política de seguridad:</strong> No dejar sesiones RDP abiertas al finalizar el pase. Cualquier sesión abandonada puede ser usada por terceros si la PC del operador queda desatendida.</p></div>",
+<div data-panel-type=""warning""><p><strong>Política de seguridad:</strong> No dejar sesiones RDP abiertas al finalizar el pase. Cualquier sesión abandonada puede ser usada por terceros si la PC del operador queda desatendida.</p></div>",
                 },
             },
             reversion = new object[]
@@ -710,7 +729,7 @@ robocopy $latestBackup ""{{ruta_fisica_web}}"" /MIR /R:3 /W:5 /COPY:DAT /LOG:""D
 </ol>
 <pre><code>Get-ChildItem ""{{ruta_fisica_web}}\web.config"" | Select-Object Name, LastWriteTime</code></pre>
 
-<div data-panel-type=""error""><p><strong>⚠ Si el backup no existe o está corrupto:</strong> ESCALAR INMEDIATAMENTE al equipo de Infraestructura. No intentar recuperación manual.</p></div>",
+<div data-panel-type=""error""><p><strong>Si el backup no existe o está corrupto:</strong> ESCALAR INMEDIATAMENTE al equipo de Infraestructura. No intentar recuperación manual.</p></div>",
                 },
                 new
                 {
@@ -741,15 +760,15 @@ Get-WebAppPoolState -Name ""{{app_pools}}""</code></pre>
 
 <h3>Checks</h3>
 <ul>
-  <li>✔ HTTP 200 OK</li>
-  <li>✔ Carga visual correcta</li>
-  <li>✔ Versión mostrada corresponde a la <strong>anterior</strong> (no la nueva fallida)</li>
-  <li>✔ No hay errores en Event Viewer</li>
+  <li>HTTP 200 OK</li>
+  <li>Carga visual correcta</li>
+  <li>Versión mostrada corresponde a la <strong>anterior</strong> (no la nueva fallida)</li>
+  <li>No hay errores en Event Viewer</li>
 </ul>
 
 <h3>Resultado esperado</h3>
-<p>✅ Sitio estable con versión anterior → Reversión exitosa. Continuar con pasos 5 y 6.</p>
-<p>❌ Sitio sigue sin responder → INCIDENTE CRÍTICO, escalar al paso siguiente.</p>",
+<p>Sitio estable con versión anterior → Reversión exitosa. Continuar con pasos 5 y 6.</p>
+<p>Sitio sigue sin responder → INCIDENTE CRÍTICO, escalar al paso siguiente.</p>",
                     on_fail = new
                     {
                         steps = new object[]
@@ -763,14 +782,14 @@ Get-WebAppPoolState -Name ""{{app_pools}}""</code></pre>
 
 <h3>Acciones inmediatas</h3>
 <ol>
-  <li>📞 Llamar al canal de <strong>Guardia 24/7</strong> del equipo de Infraestructura.</li>
-  <li>📞 Notificar al <strong>Gerente de Operaciones</strong> del área.</li>
-  <li>📝 Crear incidente con prioridad <strong>P1 / Sev1</strong>.</li>
-  <li>🔒 Dejar la sesión RDP abierta para que Infra pueda conectarse y diagnosticar.</li>
-  <li>📋 Documentar todos los comandos ejecutados y los errores vistos.</li>
+  <li>Llamar al canal de <strong>Guardia 24/7</strong> del equipo de Infraestructura.</li>
+  <li>Notificar al <strong>Gerente de Operaciones</strong> del área.</li>
+  <li>Crear incidente con prioridad <strong>P1 / Sev1</strong>.</li>
+  <li>Dejar la sesión RDP abierta para que Infra pueda conectarse y diagnosticar.</li>
+  <li>Documentar todos los comandos ejecutados y los errores vistos.</li>
 </ol>
 
-<div data-panel-type=""warning""><p><strong>⚠ NO tocar más el servidor sin autorización de Infra.</strong> Cualquier acción adicional puede empeorar la situación o dificultar el diagnóstico.</p></div>",
+<div data-panel-type=""warning""><p><strong>NO tocar más el servidor sin autorización de Infra.</strong> Cualquier acción adicional puede empeorar la situación o dificultar el diagnóstico.</p></div>",
                             },
                         },
                     },
@@ -786,7 +805,7 @@ Get-WebAppPoolState -Name ""{{app_pools}}""</code></pre>
 <h3>Procedimiento</h3>
 <pre><code>Remove-Item -Path ""D:\{{ticket_jira}}"" -Recurse -Force</code></pre>
 
-<div data-panel-type=""note""><p><strong>💡 Nota:</strong> El backup en <code>{{ruta_backup}}</code> NO se elimina. Se mantiene para análisis post-mortem.</p></div>",
+<div data-panel-type=""note""><p><strong>Nota:</strong> El backup en <code>{{ruta_backup}}</code> NO se elimina. Se mantiene para análisis post-mortem.</p></div>",
                 },
                 new
                 {
@@ -798,11 +817,11 @@ Get-WebAppPoolState -Name ""{{app_pools}}""</code></pre>
 
 <h3>Información a documentar</h3>
 <ul>
-  <li>📌 <strong>Hora exacta</strong> del rollback (inicio y fin)</li>
-  <li>📌 <strong>Motivo</strong> por el cual falló el pase (error observado)</li>
-  <li>📌 <strong>Screenshots</strong> o logs del error</li>
-  <li>📌 <strong>Estado actual</strong>: sitio operativo con versión anterior</li>
-  <li>📌 <strong>Ruta del backup</strong> usado para la restauración</li>
+  <li><strong>Hora exacta</strong> del rollback (inicio y fin)</li>
+  <li><strong>Motivo</strong> por el cual falló el pase (error observado)</li>
+  <li><strong>Screenshots</strong> o logs del error</li>
+  <li><strong>Estado actual</strong>: sitio operativo con versión anterior</li>
+  <li><strong>Ruta del backup</strong> usado para la restauración</li>
 </ul>
 
 <h3>Post-mortem</h3>
@@ -820,9 +839,99 @@ Get-WebAppPoolState -Name ""{{app_pools}}""</code></pre>
   <li>Re-planificar el pase con las correcciones necesarias.</li>
 </ol>
 
-<div data-panel-type=""note""><p><strong>💡 Nota:</strong> No volver a intentar el pase hasta que la causa raíz esté identificada y corregida en ambiente pre-productivo.</p></div>",
+<div data-panel-type=""note""><p><strong>Nota:</strong> No volver a intentar el pase hasta que la causa raíz esté identificada y corregida en ambiente pre-productivo.</p></div>",
                 },
             },
+        };
+
+        return System.Text.Json.JsonSerializer.Serialize(
+            doc,
+            new System.Text.Json.JsonSerializerOptions { WriteIndented = false }
+        );
+    }
+
+    private static IEnumerable<TemplateInput> BuildWorkOrderInputs(Guid templateId)
+    {
+        yield return new TemplateInput
+        {
+            Id = Guid.NewGuid(),
+            TemplateId = templateId,
+            Key = "servidor",
+            Label = "Servidor (hostname o IP)",
+            InputType = InputType.Text,
+            IsRequired = true,
+            DisplayOrder = 1,
+            HelpText = "Hostname o IP del servidor Windows. Ej: SRVPRDAPP01",
+        };
+        yield return new TemplateInput
+        {
+            Id = Guid.NewGuid(),
+            TemplateId = templateId,
+            Key = "nombre_servicio",
+            Label = "Nombre del Servicio Windows",
+            InputType = InputType.Text,
+            IsRequired = true,
+            DisplayOrder = 2,
+            HelpText =
+                "Nombre exacto del servicio tal como aparece en services.msc. Ej: MiServicioApp",
+        };
+        yield return new TemplateInput
+        {
+            Id = Guid.NewGuid(),
+            TemplateId = templateId,
+            Key = "ticket_wo",
+            Label = "Número de Work Order",
+            InputType = InputType.Text,
+            IsRequired = true,
+            DisplayOrder = 3,
+            HelpText = "Ejemplo: WO-2024-0042",
+        };
+        yield return new TemplateInput
+        {
+            Id = Guid.NewGuid(),
+            TemplateId = templateId,
+            Key = "motivo",
+            Label = "Motivo del reinicio",
+            InputType = InputType.Text,
+            IsRequired = true,
+            DisplayOrder = 4,
+            HelpText = "Descripción breve del motivo. Ej: Alta memoria, proceso colgado",
+        };
+    }
+
+    private static string BuildWorkOrderStepsJson()
+    {
+        var html =
+            @"<h3>Work Order: Reinicio de Servicio Windows</h3>"
+            + @"<p><strong>Servidor:</strong> {{servidor}}<br/>"
+            + @"<strong>Servicio:</strong> {{nombre_servicio}}<br/>"
+            + @"<strong>WO:</strong> {{ticket_wo}}<br/>"
+            + @"<strong>Motivo:</strong> {{motivo}}</p>"
+            + @"<h3>Procedimiento</h3><ol>"
+            + @"<li>Conectarse al servidor <code>{{servidor}}</code> via RDP.</li>"
+            + @"<li>Abrir <strong>PowerShell</strong> como administrador.</li>"
+            + @"<li>Verificar estado: <code>Get-Service -Name ""{{nombre_servicio}}""</code></li>"
+            + @"<li>Detener: <code>Stop-Service -Name ""{{nombre_servicio}}"" -Force</code></li>"
+            + @"<li>Confirmar estado <strong>Stopped</strong>.</li>"
+            + @"<li>Iniciar: <code>Start-Service -Name ""{{nombre_servicio}}""</code></li>"
+            + @"<li>Confirmar estado <strong>Running</strong> y revisar Event Viewer.</li>"
+            + @"</ol>"
+            + @"<div data-panel-type=""success""><p>Si el servicio arrancó correctamente y no hay errores en los logs, la WO puede marcarse como completada.</p></div>";
+
+        var doc = new
+        {
+            steps = new object[]
+            {
+                new
+                {
+                    order = 1,
+                    title = "description",
+                    type = "action",
+                    description = html,
+                },
+            },
+            post_steps = Array.Empty<object>(),
+            reversion = Array.Empty<object>(),
         };
 
         return System.Text.Json.JsonSerializer.Serialize(

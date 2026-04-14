@@ -11,4 +11,5 @@ public class TemplateFormModel
     public string? Description { get; set; }
     public List<TemplateInputDto> Inputs { get; set; } = new();
     public StepsEditorModel Steps { get; set; } = new();
+    public string WoContent { get; set; } = string.Empty;
 }

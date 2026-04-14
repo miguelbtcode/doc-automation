@@ -35,6 +35,7 @@ public class StartDeploymentCommandHandler(
         {
             Id = Guid.NewGuid(),
             TemplateId = template.Id,
+            TemplateType = template.Type,
             TemplateSlug = template.Slug,
             TemplateName = template.Name,
             TemplateVersion = template.Version,

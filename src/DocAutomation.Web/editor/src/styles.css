@@ -106,9 +106,9 @@ html[data-theme="dark"] .da-toolbar-btn.da-toolbar-active {
     border: 1px solid #DFE1E6;
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(9, 30, 66, 0.15);
-    padding: 4px;
+    padding: 0;
     z-index: 1000;
-    /* Columna vertical compacta */
+    overflow: hidden;
     min-width: auto;
     width: auto;
 }
@@ -124,18 +124,17 @@ html[data-theme="dark"] .da-toolbar-btn.da-toolbar-active {
     justify-content: flex-start;
     gap: 8px;
     width: 100%;
-    min-width: 100px;
-    height: 28px;
-    padding: 0 8px;
-    background: transparent;
+    min-width: 120px;
+    height: 32px;
+    padding: 0 10px;
     border: none;
-    border-radius: 4px;
+    border-radius: 0;
     cursor: pointer;
-    transition: background 0.12s;
+    transition: filter 0.12s;
 }
 
 .da-toolbar-panel-item:hover {
-    background: #EBECF0;
+    filter: brightness(0.94);
 }
 
 .da-toolbar-panel-item svg {
@@ -388,15 +387,64 @@ html[data-theme="dark"] .da-editor-content hr {
     position: relative;
 }
 
-.da-editor-content .da-panel::before {
-    content: '';
-    display: block;
+/* Wrapper del panel — posición relativa para el drag handle absoluto */
+.da-editor-content .da-panel-wrapper {
+    position: relative;
+}
+
+/* Drag handle — fuera del box coloreado, a la izquierda */
+.da-editor-content .da-panel-drag {
+    position: absolute;
+    left: -24px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    color: #97A0AF;
+    cursor: grab;
+    user-select: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    border-radius: 3px;
+}
+
+.da-editor-content .da-panel-wrapper:hover .da-panel-drag {
+    opacity: 1;
+}
+
+.da-editor-content .da-panel-drag:hover {
+    color: #172B4D;
+    background: #E8EBEE;
+}
+
+.da-editor-content .da-panel-drag:active {
+    cursor: grabbing;
+}
+
+/* Icono del tipo (NodeView) — click abre el type picker */
+.da-editor-content .da-panel-icon {
+    font-size: 20px;
     flex-shrink: 0;
     width: 24px;
     height: 24px;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 24px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+    border-radius: 3px;
+    transition: background 0.12s, outline 0.12s;
+}
+
+.da-editor-content .da-panel-icon:hover {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
 }
 
 .da-editor-content .da-panel-content {
@@ -412,71 +460,104 @@ html[data-theme="dark"] .da-editor-content hr {
     margin-top: 0.5em;
 }
 
-/* Info — círculo azul con "i" */
-.da-editor-content .da-panel-info {
-    background-color: #DEEBFF;
-    color: #172B4D;
-}
-.da-editor-content .da-panel-info::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%230747A6' fill-rule='evenodd' d='M12 20a8 8 0 1 1 0-16 8 8 0 0 1 0 16m0-8.5a1 1 0 0 0-1 1V15a1 1 0 0 0 2 0v-2.5a1 1 0 0 0-1-1m0-1.125a1.375 1.375 0 1 0 0-2.75 1.375 1.375 0 0 0 0 2.75'/%3E%3C/svg%3E");
+/* Colores de fondo por tipo */
+.da-editor-content .da-panel-info    { background-color: #DEEBFF; color: #172B4D; }
+.da-editor-content .da-panel-note    { background-color: #EAE6FF; color: #172B4D; }
+.da-editor-content .da-panel-success { background-color: #E3FCEF; color: #172B4D; }
+.da-editor-content .da-panel-warning { background-color: #FFFAE6; color: #172B4D; }
+.da-editor-content .da-panel-error   { background-color: #FFEBE6; color: #172B4D; }
+
+/* ── Type picker dropdown ────────────────────────────────────────────────── */
+/* Vive en document.body (portal), position:fixed sin ningún overflow padre  */
+.da-panel-type-picker {
+    display: none;
+    position: fixed;
+    background: #FFFFFF;
+    border: 1px solid #DFE1E6;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(9, 30, 66, 0.18);
+    padding: 4px;
+    z-index: 9999;
+    min-width: 130px;
 }
 
-/* Note — pencil violeta */
-.da-editor-content .da-panel-note {
-    background-color: #EAE6FF;
-    color: #172B4D;
-}
-.da-editor-content .da-panel-note::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23403294' fill-rule='evenodd' d='M19.078 4.922a3.151 3.151 0 0 0-4.456 0l-9.7 9.7a1 1 0 0 0-.252.422l-1.629 5.296a1 1 0 0 0 1.246 1.247l5.296-1.629a1 1 0 0 0 .422-.252l9.7-9.7a3.151 3.151 0 0 0 0-4.456zm-1.414 1.414a1.151 1.151 0 0 1 1.628 1.628l-9.43 9.43-2.171.668.668-2.171z'/%3E%3C/svg%3E");
+.da-panel-type-picker.da-panel-type-picker-open {
+    display: block;
 }
 
-/* Success — checkmark verde */
-.da-editor-content .da-panel-success {
-    background-color: #E3FCEF;
-    color: #172B4D;
-}
-.da-editor-content .da-panel-success::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23006644' fill-rule='evenodd' d='M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16m4.16 5.527L10.5 15.187 7.84 12.527a1 1 0 1 0-1.413 1.414l3.366 3.366a1 1 0 0 0 1.414 0l6.366-6.366a1 1 0 0 0-1.414-1.414'/%3E%3C/svg%3E");
-}
-
-/* Warning — triángulo amarillo */
-.da-editor-content .da-panel-warning {
-    background-color: #FFFAE6;
-    color: #172B4D;
-}
-.da-editor-content .da-panel-warning::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23FF8B00' fill-rule='evenodd' d='M12.938 4.967a1.085 1.085 0 0 0-1.876 0L3.193 18.45A1.084 1.084 0 0 0 4.13 20.083h15.74A1.084 1.084 0 0 0 20.807 18.45zM12 10a1 1 0 0 1 1 1v3.5a1 1 0 0 1-2 0V11a1 1 0 0 1 1-1m0 6.875a1.375 1.375 0 1 1 0 2.75 1.375 1.375 0 0 1 0-2.75'/%3E%3C/svg%3E");
+.da-pt-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.1s;
 }
 
-/* Error — círculo rojo con X */
-.da-editor-content .da-panel-error {
-    background-color: #FFEBE6;
-    color: #172B4D;
+.da-pt-item:hover,
+.da-pt-item.da-pt-active {
+    background: #F4F5F7;
 }
-.da-editor-content .da-panel-error::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23BF2600' fill-rule='evenodd' d='M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16m2.829 5.757L12 12.586 9.172 9.757a1 1 0 1 0-1.415 1.415L10.586 14l-2.829 2.828a1 1 0 1 0 1.415 1.415L12 15.414l2.828 2.829a1 1 0 0 0 1.415-1.415L13.414 14l2.829-2.828a1 1 0 1 0-1.415-1.415'/%3E%3C/svg%3E");
+
+.da-pt-icon {
+    font-size: 16px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.da-pt-label {
+    font-size: 13px;
+    color: #172B4D;
+    white-space: nowrap;
+}
+
+html[data-theme="dark"] .da-panel-type-picker {
+    background: #22272B;
+    border-color: #38414A;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme="dark"] .da-pt-item:hover,
+html[data-theme="dark"] .da-pt-item.da-pt-active {
+    background: #2C333A;
+}
+
+html[data-theme="dark"] .da-pt-label {
+    color: #B6C2CF;
+}
+
+/* Nodo seleccionado — el outline va en el box coloreado, no en el wrapper */
+.da-editor-content .da-panel-wrapper.ProseMirror-selectednode .da-panel {
+    outline: 2px solid #0052CC;
+    outline-offset: 1px;
 }
 
 /* Dark mode para paneles */
-html[data-theme="dark"] .da-editor-content .da-panel-info {
-    background-color: #1c2b4a;
-    color: #c8d3e8;
+html[data-theme="dark"] .da-editor-content .da-panel-info    { background-color: #1c2b4a; color: #c8d3e8; }
+html[data-theme="dark"] .da-editor-content .da-panel-note    { background-color: #2a2440; color: #d8d3ea; }
+html[data-theme="dark"] .da-editor-content .da-panel-success { background-color: #1b3a2c; color: #c8e8d6; }
+html[data-theme="dark"] .da-editor-content .da-panel-warning { background-color: #3d3320; color: #ead7a8; }
+html[data-theme="dark"] .da-editor-content .da-panel-error   { background-color: #3d1f1c; color: #e8c4be; }
+
+html[data-theme="dark"] .da-editor-content .da-panel-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
-html[data-theme="dark"] .da-editor-content .da-panel-note {
-    background-color: #2a2440;
-    color: #d8d3ea;
+
+html[data-theme="dark"] .da-editor-content .da-panel-drag {
+    color: #6B778C;
 }
-html[data-theme="dark"] .da-editor-content .da-panel-success {
-    background-color: #1b3a2c;
-    color: #c8e8d6;
+
+html[data-theme="dark"] .da-editor-content .da-panel-drag:hover {
+    color: #B6C2CF;
+    background: #2C333A;
 }
-html[data-theme="dark"] .da-editor-content .da-panel-warning {
-    background-color: #3d3320;
-    color: #ead7a8;
-}
-html[data-theme="dark"] .da-editor-content .da-panel-error {
-    background-color: #3d1f1c;
-    color: #e8c4be;
+
+html[data-theme="dark"] .da-editor-content .da-panel-wrapper.ProseMirror-selectednode .da-panel {
+    outline-color: #85B8FF;
 }
 
 /* ============= Bubble menu (toolbar contextual sobre paneles) ============= */

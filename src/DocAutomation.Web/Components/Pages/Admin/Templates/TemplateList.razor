@@ -1,8 +1,10 @@
 @page "/admin/templates"
+@page "/admin/work-orders/templates"
 @using DocAutomation.Application.Features.Templates.Models
 @using DocAutomation.Application.Features.Templates.Commands.DeleteTemplate
 @using DocAutomation.Application.Features.Templates.Queries.GetAllTemplates
 @using DocAutomation.Application.Common.Cqrs
+@using DocAutomation.Domain.Enums
 @inject IMediator Mediator
 @inject NavigationManager Nav
 @inject DialogService DialogService
@@ -11,14 +13,14 @@
 @inject RecentActionsService RecentActions
 @implements IDisposable
 
-<PageTitle>Templates</PageTitle>
+<PageTitle>@PageTitle</PageTitle>
 
-<PageHeader Title="Templates"
-            Subtitle="Administrá los templates de pases a producción"
-            Breadcrumbs="@(new List<PageHeader.BreadcrumbItem> { new("Administración"), new("Templates") })">
+<PageHeader Title="@PageTitle"
+            Subtitle="@Subtitle"
+            Breadcrumbs="@(new List<PageHeader.BreadcrumbItem> { new("Administración"), new(PageTitle) })">
     <Actions>
         <RadzenButton Text="Nuevo Template" Icon="add" ButtonStyle="ButtonStyle.Primary"
-                      Click="@(() => Nav.NavigateTo("/admin/templates/create"))" />
+                      Click="@(() => Nav.NavigateTo(CreatePath))" />
     </Actions>
 </PageHeader>
 
@@ -55,9 +57,9 @@ else
                 <Template Context="item">
                     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.25rem">
                         <RadzenButton Icon="visibility" Variant="Variant.Text" Size="ButtonSize.Small"
-                                      Click="@(() => Nav.NavigateTo($"/admin/templates/preview/{item.Id}"))" />
+                                      Click="@(() => Nav.NavigateTo($"{BasePath}/preview/{item.Id}"))" />
                         <RadzenButton Icon="edit" Variant="Variant.Text" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small"
-                                      Click="@(() => Nav.NavigateTo($"/admin/templates/edit/{item.Id}"))" />
+                                      Click="@(() => Nav.NavigateTo($"{BasePath}/edit/{item.Id}"))" />
                         <RadzenButton Icon="delete" Variant="Variant.Text" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small"
                                       Click="@(() => DeleteAsync(item))" />
                     </RadzenStack>
@@ -77,14 +79,35 @@ else
     private bool _loading = true;
     private string _searchTerm = string.Empty;
     private RadzenTextBox _searchBox = null!;
+    private bool _isWorkOrders;
 
-    // Memoized filtered templates - only recomputed when _templates or _searchTerm changes
+    private TemplateType TemplateType => _isWorkOrders ? TemplateType.WorkOrder : TemplateType.Deployment;
+    private string BasePath => _isWorkOrders ? "/admin/work-orders/templates" : "/admin/templates";
+    private string CreatePath => $"{BasePath}/create";
+    private string PageTitle => _isWorkOrders ? "Templates — Work Orders" : "Templates — Pases a Producción";
+    private string Subtitle => _isWorkOrders
+        ? "Administrá los templates de Work Orders"
+        : "Administrá los templates de pases a producción";
+
     private IReadOnlyList<TemplateListItemDto> _filteredTemplates = Array.Empty<TemplateListItemDto>();
 
-    protected override void OnParametersSet()
+    protected override async Task OnInitializedAsync()
     {
-        base.OnParametersSet();
-        UpdateFilteredTemplates();
+        _isWorkOrders = Nav.Uri.Contains("/work-orders/");
+        Shortcuts.ShortcutTriggered += OnShortcutAsync;
+        Nav.LocationChanged += OnLocationChanged;
+        await LoadAsync();
+    }
+
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        var isWorkOrders = e.Location.Contains("/work-orders/");
+        if (isWorkOrders == _isWorkOrders) return;
+
+        _isWorkOrders = isWorkOrders;
+        _searchTerm = string.Empty;
+        await LoadAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
     private void UpdateFilteredTemplates()
@@ -105,16 +128,11 @@ else
         StateHasChanged();
     }
 
-    protected override async Task OnInitializedAsync()
-    {
-        Shortcuts.ShortcutTriggered += OnShortcutAsync;
-        await LoadAsync();
-    }
-
     private async Task LoadAsync()
     {
         _loading = true;
-        _templates = await Mediator.Send(new GetAllTemplatesQuery());
+        _templates = await Mediator.Send(new GetAllTemplatesQuery(TemplateType));
+        UpdateFilteredTemplates();
         _loading = false;
     }
 
@@ -156,5 +174,6 @@ else
     public void Dispose()
     {
         Shortcuts.ShortcutTriggered -= OnShortcutAsync;
+        Nav.LocationChanged -= OnLocationChanged;
     }
 }

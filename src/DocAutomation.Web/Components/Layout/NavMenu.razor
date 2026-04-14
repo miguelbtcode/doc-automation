@@ -6,7 +6,13 @@
         <RadzenPanelMenuItem Text="Historial" Icon="history" Path="/deployments/history" />
     </RadzenPanelMenuItem>
 
+    <RadzenPanelMenuItem Text="Work Orders" Icon="assignment" Expanded="true">
+        <RadzenPanelMenuItem Text="Nueva WO" Icon="add_circle" Path="/work-orders/new" />
+        <RadzenPanelMenuItem Text="Historial" Icon="history" Path="/work-orders/history" />
+    </RadzenPanelMenuItem>
+
     <RadzenPanelMenuItem Text="Administración" Icon="settings" Expanded="false">
-        <RadzenPanelMenuItem Text="Templates" Icon="description" Path="/admin/templates" />
+        <RadzenPanelMenuItem Text="Templates — Pases" Icon="description" Path="/admin/templates" />
+        <RadzenPanelMenuItem Text="Templates — Work Orders" Icon="assignment_turned_in" Path="/admin/work-orders/templates" />
     </RadzenPanelMenuItem>
 </RadzenPanelMenu>

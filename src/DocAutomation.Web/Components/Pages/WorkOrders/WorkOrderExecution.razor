@@ -1,0 +1,139 @@
+@page "/work-orders/{Id:guid}"
+@using System.Text.Json
+@using DocAutomation.Application.Features.Deployments.Queries.GetDeploymentById
+@using DocAutomation.Application.Features.Deployments.Commands.CompleteDeployment
+@using DocAutomation.Application.Features.Deployments.Models
+@using DocAutomation.Domain.Enums
+@using DocAutomation.Application.Common.Cqrs
+@inject IMediator Mediator
+@inject NavigationManager Nav
+@inject NotificationService NotificationService
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<PageTitle>@(_deployment?.TemplateName ?? "Work Order")</PageTitle>
+
+@if (_loading)
+{
+    <LoadingSkeleton Type="LoadingSkeleton.SkeletonType.Form" Rows="8" />
+}
+else if (_deployment is null)
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger">No se encontró la Work Order.</RadzenAlert>
+}
+else
+{
+    <PageHeader Title="@_deployment.TemplateName"
+                BackPath="/work-orders/history"
+                Breadcrumbs="@(new List<PageHeader.BreadcrumbItem> { new("Work Orders", "/work-orders/history"), new(_deployment.TemplateName) })">
+        <TitleBadges>
+            <RadzenBadge BadgeStyle="@StatusBadge(_deployment.Status)" Text="@_deployment.Status.ToString()" />
+        </TitleBadges>
+        <Actions>
+            <RadzenButton Text="Copiar" Icon="content_copy" Variant="Variant.Outlined"
+                          ButtonStyle="ButtonStyle.Base" Click="@CopyAsync" />
+            @if (_deployment.Status == DeploymentStatus.InProgress)
+            {
+                <RadzenButton Text="Completar WO" Icon="check_circle" ButtonStyle="ButtonStyle.Success"
+                              Disabled="_completing" Click="@CompleteAsync" />
+            }
+        </Actions>
+    </PageHeader>
+
+    <RadzenCard Variant="Variant.Outlined" Class="rz-p-2 rz-mb-4">
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="2rem" Wrap="FlexWrap.Wrap">
+            <RadzenText TextStyle="TextStyle.Caption">
+                <strong>Iniciado:</strong> @_deployment.StartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+            </RadzenText>
+            @if (_deployment.CompletedAt.HasValue)
+            {
+                <RadzenText TextStyle="TextStyle.Caption">
+                    <strong>Completado:</strong> @_deployment.CompletedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                </RadzenText>
+            }
+            <RadzenText TextStyle="TextStyle.Caption">
+                <strong>Operador:</strong> @_deployment.CompletedBy
+            </RadzenText>
+            <RadzenText TextStyle="TextStyle.Caption">
+                <strong>Template:</strong> @_deployment.TemplateSlug v@_deployment.TemplateVersion
+            </RadzenText>
+        </RadzenStack>
+    </RadzenCard>
+
+    <RadzenCard Variant="Variant.Outlined" Class="rz-p-6">
+        <div id="wo-content" class="da-wo-content">
+            @((MarkupString)_renderedContent)
+        </div>
+    </RadzenCard>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private DeploymentDto? _deployment;
+    private string _renderedContent = string.Empty;
+    private bool _loading = true;
+    private bool _completing;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _deployment = await Mediator.Send(new GetDeploymentByIdQuery(Id));
+        if (_deployment is not null)
+            _renderedContent = ExtractContent(_deployment.RenderedStepsJson);
+        _loading = false;
+    }
+
+    private static string ExtractContent(string renderedStepsJson)
+    {
+        if (string.IsNullOrWhiteSpace(renderedStepsJson)) return string.Empty;
+        try
+        {
+            using var doc = JsonDocument.Parse(renderedStepsJson);
+            if (doc.RootElement.TryGetProperty("steps", out var steps))
+            {
+                foreach (var step in steps.EnumerateArray())
+                {
+                    if (step.TryGetProperty("description", out var d))
+                        return d.GetString() ?? string.Empty;
+                }
+            }
+        }
+        catch { }
+        return string.Empty;
+    }
+
+    private async Task CopyAsync()
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", _renderedContent);
+        NotificationService.Notify(NotificationSeverity.Success, "Copiado al portapapeles.");
+    }
+
+    private async Task CompleteAsync()
+    {
+        _completing = true;
+        try
+        {
+            var ok = await Mediator.Send(new CompleteDeploymentCommand(Id, DeploymentStatus.Completed, null));
+            if (ok)
+            {
+                _deployment!.Status = DeploymentStatus.Completed;
+                _deployment.CompletedAt = DateTime.UtcNow;
+                NotificationService.Notify(NotificationSeverity.Success, "Work Order completada.");
+            }
+        }
+        finally
+        {
+            _completing = false;
+        }
+    }
+
+    private static BadgeStyle StatusBadge(DeploymentStatus status) => status switch
+    {
+        DeploymentStatus.Completed => BadgeStyle.Success,
+        DeploymentStatus.Failed => BadgeStyle.Danger,
+        DeploymentStatus.Reverted => BadgeStyle.Warning,
+        _ => BadgeStyle.Info
+    };
+
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}

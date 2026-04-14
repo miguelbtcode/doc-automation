@@ -4,11 +4,11 @@
 import { iconHtml } from './icons.js';
 
 const PANEL_TYPES = [
-    { key: 'info', icon: 'info', label: 'Info' },
-    { key: 'note', icon: 'note', label: 'Note' },
-    { key: 'success', icon: 'success', label: 'Tip' },
-    { key: 'warning', icon: 'warning', label: 'Warning' },
-    { key: 'error', icon: 'error', label: 'Error' }
+    { key: 'info',    matIcon: 'info',          label: 'Info' },
+    { key: 'note',    matIcon: 'description',    label: 'Note' },
+    { key: 'success', matIcon: 'check_circle',   label: 'Tip' },
+    { key: 'warning', matIcon: 'warning',         label: 'Warning' },
+    { key: 'error',   matIcon: 'cancel',          label: 'Error' }
 ];
 
 export function buildToolbar(container, editor) {
@@ -190,7 +190,7 @@ function addPanelDropdown(container, editor) {
         item.dataset.panelType = panel.key;
         item.title = panel.label;
         item.innerHTML = `
-            <span class="da-panel-item-icon">${iconHtml(panel.icon, 16)}</span>
+            <span class="da-panel-item-icon">${panel.matIcon ? `<span class="material-icons" style="font-size:16px;line-height:1">${panel.matIcon}</span>` : ''}</span>
             <span class="da-panel-item-label">${panel.label}</span>
         `;
         item.addEventListener('click', e => {

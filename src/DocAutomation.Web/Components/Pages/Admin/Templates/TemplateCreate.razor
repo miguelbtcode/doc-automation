@@ -1,6 +1,8 @@
 @page "/admin/templates/create"
+@page "/admin/work-orders/templates/create"
 @using DocAutomation.Application.Features.Templates.Commands.CreateTemplate
 @using DocAutomation.Application.Common.Cqrs
+@using DocAutomation.Domain.Enums
 @inject IMediator Mediator
 @inject NavigationManager Nav
 @inject NotificationService NotificationService
@@ -12,27 +14,42 @@
 <PageTitle>Nuevo Template</PageTitle>
 
 <PageHeader Title="Nuevo Template"
-            BackPath="/admin/templates"
-            Breadcrumbs="@(new List<PageHeader.BreadcrumbItem> { new("Administración"), new("Templates", "/admin/templates"), new("Nuevo") })">
+            BackPath="@ListPath"
+            Breadcrumbs="@(new List<PageHeader.BreadcrumbItem> { new("Administración"), new(ListLabel, ListPath), new("Nuevo") })">
     <Actions>
         <RadzenButton Text="Cancelar" Variant="Variant.Flat" ButtonStyle="ButtonStyle.Base"
-                      Click="@(() => Nav.NavigateTo("/admin/templates"))" />
+                      Click="@(() => Nav.NavigateTo(ListPath))" />
         <RadzenButton Text="@(_saving ? "Guardando..." : "Crear Template (Ctrl+S)")" Icon="save"
                       ButtonStyle="ButtonStyle.Primary" Disabled="_saving" Click="@(() => SaveAsync())" />
     </Actions>
 </PageHeader>
 
 <RadzenCard Variant="Variant.Outlined" Class="rz-p-6">
-    <TemplateForm @ref="_templateForm" Model="_model" />
+    @if (_isWorkOrders)
+    {
+        <WorkOrderTemplateForm @ref="_woForm" Model="_model" />
+    }
+    else
+    {
+        <TemplateForm @ref="_templateForm" Model="_model" />
+    }
 </RadzenCard>
 
 @code {
     private readonly TemplateFormModel _model = new();
     private TemplateForm _templateForm = null!;
+    private WorkOrderTemplateForm _woForm = null!;
     private bool _saving;
+    private bool _isWorkOrders;
+
+    private TemplateType TemplateType => _isWorkOrders ? TemplateType.WorkOrder : TemplateType.Deployment;
+    private string ListPath => _isWorkOrders ? "/admin/work-orders/templates" : "/admin/templates";
+    private string ListLabel => _isWorkOrders ? "Templates WO" : "Templates";
+    private string PreviewBasePath => _isWorkOrders ? "/admin/work-orders/templates" : "/admin/templates";
 
     protected override void OnInitialized()
     {
+        _isWorkOrders = Nav.Uri.Contains("/work-orders/");
         Shortcuts.ShortcutTriggered += OnShortcutAsync;
     }
 
@@ -41,7 +58,18 @@
     private async Task SaveAsync()
     {
         if (_saving) return;
-        if (!await _templateForm.ValidateAsync())
+
+        if (_isWorkOrders)
+        {
+            if (!_woForm.Validate())
+            {
+                NotificationService.Notify(NotificationSeverity.Warning,
+                    "Completá todos los campos",
+                    "Nombre, slug, al menos una variable y el contenido son requeridos.");
+                return;
+            }
+        }
+        else if (!await _templateForm.ValidateAsync())
         {
             NotificationService.Notify(NotificationSeverity.Warning,
                 "Completá todos los campos",
@@ -52,22 +80,26 @@
         _saving = true;
         try
         {
-            var stepsJson = StepsJsonConverter.ToJson(_model.Steps);
+            var stepsJson = _isWorkOrders
+                ? StepsJsonConverter.WoContentToJson(_model.WoContent)
+                : StepsJsonConverter.ToJson(_model.Steps);
+
             var id = await Mediator.Send(new CreateTemplateCommand(
                 _model.Slug,
                 _model.Name,
                 _model.Description,
                 stepsJson,
                 _model.Inputs,
-                "admin"));
+                "admin",
+                TemplateType));
 
             await Guard.MarkCleanAsync();
             NotificationService.Notify(NotificationSeverity.Success, "Template creado correctamente.");
             await RecentActions.LogAsync($"Template creado: {_model.Name}",
                 detail: _model.Slug,
                 severity: RecentActionSeverity.Success,
-                href: $"/admin/templates/preview/{id}");
-            Nav.NavigateTo($"/admin/templates/preview/{id}");
+                href: $"{PreviewBasePath}/preview/{id}");
+            Nav.NavigateTo($"{PreviewBasePath}/preview/{id}");
         }
         catch (FluentValidation.ValidationException ex)
         {

@@ -13,6 +13,8 @@ public class TemplateConfiguration : IEntityTypeConfiguration<Template>
         builder.HasKey(t => t.Id);
         builder.Property(t => t.Id).HasDefaultValueSql("NEWSEQUENTIALID()");
 
+        builder.Property(t => t.Type).IsRequired().HasDefaultValue(TemplateType.Deployment);
+
         builder.Property(t => t.Slug).IsRequired().HasMaxLength(100);
         builder.HasIndex(t => t.Slug).IsUnique();
 

@@ -348,13 +348,14 @@ html[data-theme="dark"] .da-step-description table td {
 }
 
 /* ==============================================================================
-   Jira / Confluence panels (Info, Note, Success, Warning, Error)
-   El HTML inline incluye sus propios styles inline para que se preserven al
-   copiar/pegar en Jira. Estas reglas son una mejora visual extra cuando el panel
-   se renderiza dentro del portal o se exporta como .html.
+   Jira / Confluence panels — scoped a contenedores de contenido para evitar
+   que los selectores [data-panel-type] y .da-panel-* choquen con los ítems
+   del toolbar del editor (que comparten esas mismas clases/atributos).
    ============================================================================== */
-.da-panel,
-[data-panel-type] {
+.da-wo-content .da-panel,
+.da-wo-content [data-panel-type],
+.da-step-description .da-panel,
+.da-step-description [data-panel-type] {
     display: flex;
     align-items: flex-start;
     gap: 10px;
@@ -364,73 +365,105 @@ html[data-theme="dark"] .da-step-description table td {
     line-height: 1.5;
 }
 
-.da-panel p,
-[data-panel-type] p {
+.da-wo-content .da-panel p,
+.da-wo-content [data-panel-type] p,
+.da-step-description .da-panel p,
+.da-step-description [data-panel-type] p {
     margin: 0 0 0.5em 0;
 }
 
-.da-panel p:last-child,
-[data-panel-type] p:last-child {
+.da-wo-content .da-panel p:last-child,
+.da-wo-content [data-panel-type] p:last-child,
+.da-step-description .da-panel p:last-child,
+.da-step-description [data-panel-type] p:last-child {
     margin-bottom: 0;
 }
 
-.da-panel-info,
-[data-panel-type="info"] {
-    background-color: #DEEBFF;
-    color: #172B4D;
+/* Colores de fondo por tipo */
+.da-wo-content .da-panel-info,      .da-wo-content [data-panel-type="info"],
+.da-step-description .da-panel-info, .da-step-description [data-panel-type="info"]
+    { background-color: #DEEBFF; color: #172B4D; }
+
+.da-wo-content .da-panel-note,      .da-wo-content [data-panel-type="note"],
+.da-step-description .da-panel-note, .da-step-description [data-panel-type="note"]
+    { background-color: #EAE6FF; color: #172B4D; }
+
+.da-wo-content .da-panel-success,      .da-wo-content [data-panel-type="success"],
+.da-step-description .da-panel-success, .da-step-description [data-panel-type="success"]
+    { background-color: #E3FCEF; color: #172B4D; }
+
+.da-wo-content .da-panel-warning,      .da-wo-content [data-panel-type="warning"],
+.da-step-description .da-panel-warning, .da-step-description [data-panel-type="warning"]
+    { background-color: #FFFAE6; color: #172B4D; }
+
+.da-wo-content .da-panel-error,      .da-wo-content [data-panel-type="error"],
+.da-step-description .da-panel-error, .da-step-description [data-panel-type="error"]
+    { background-color: #FFEBE6; color: #172B4D; }
+
+/* Íconos Material Icons en ::before */
+.da-wo-content .da-panel::before,
+.da-wo-content [data-panel-type]::before,
+.da-step-description .da-panel::before,
+.da-step-description [data-panel-type]::before {
+    font-family: 'Material Icons', sans-serif;
+    font-size: 20px;
+    content: '';
+    display: flex;
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
 
-.da-panel-note,
-[data-panel-type="note"] {
-    background-color: #EAE6FF;
-    color: #172B4D;
-}
+.da-wo-content .da-panel-info::before,      .da-wo-content [data-panel-type="info"]::before,
+.da-step-description .da-panel-info::before, .da-step-description [data-panel-type="info"]::before
+    { content: '\e88e'; color: #0747A6; }
 
-.da-panel-success,
-[data-panel-type="success"] {
-    background-color: #E3FCEF;
-    color: #172B4D;
-}
+.da-wo-content .da-panel-note::before,      .da-wo-content [data-panel-type="note"]::before,
+.da-step-description .da-panel-note::before, .da-step-description [data-panel-type="note"]::before
+    { content: '\e873'; color: #403294; }
 
-.da-panel-warning,
-[data-panel-type="warning"] {
-    background-color: #FFFAE6;
-    color: #172B4D;
-}
+.da-wo-content .da-panel-success::before,      .da-wo-content [data-panel-type="success"]::before,
+.da-step-description .da-panel-success::before, .da-step-description [data-panel-type="success"]::before
+    { content: '\e86c'; color: #006644; }
 
-.da-panel-error,
-[data-panel-type="error"] {
-    background-color: #FFEBE6;
-    color: #172B4D;
-}
+.da-wo-content .da-panel-warning::before,      .da-wo-content [data-panel-type="warning"]::before,
+.da-step-description .da-panel-warning::before, .da-step-description [data-panel-type="warning"]::before
+    { content: '\e002'; color: #FF8B00; }
 
-/* Dark mode: bajamos saturación y oscurecemos los fondos para que no quemen los ojos */
-html[data-theme="dark"] .da-panel-info,
-html[data-theme="dark"] [data-panel-type="info"] {
-    background-color: #1c2b4a;
-    color: #c8d3e8;
-}
+.da-wo-content .da-panel-error::before,      .da-wo-content [data-panel-type="error"]::before,
+.da-step-description .da-panel-error::before, .da-step-description [data-panel-type="error"]::before
+    { content: '\e5c9'; color: #BF2600; }
 
-html[data-theme="dark"] .da-panel-note,
-html[data-theme="dark"] [data-panel-type="note"] {
-    background-color: #2a2440;
-    color: #d8d3ea;
-}
+/* Dark mode */
+html[data-theme="dark"] .da-wo-content .da-panel-info,
+html[data-theme="dark"] .da-wo-content [data-panel-type="info"],
+html[data-theme="dark"] .da-step-description .da-panel-info,
+html[data-theme="dark"] .da-step-description [data-panel-type="info"]
+    { background-color: #1c2b4a; color: #c8d3e8; }
 
-html[data-theme="dark"] .da-panel-success,
-html[data-theme="dark"] [data-panel-type="success"] {
-    background-color: #1b3a2c;
-    color: #c8e8d6;
-}
+html[data-theme="dark"] .da-wo-content .da-panel-note,
+html[data-theme="dark"] .da-wo-content [data-panel-type="note"],
+html[data-theme="dark"] .da-step-description .da-panel-note,
+html[data-theme="dark"] .da-step-description [data-panel-type="note"]
+    { background-color: #2a2440; color: #d8d3ea; }
 
-html[data-theme="dark"] .da-panel-warning,
-html[data-theme="dark"] [data-panel-type="warning"] {
-    background-color: #3d3320;
-    color: #ead7a8;
-}
+html[data-theme="dark"] .da-wo-content .da-panel-success,
+html[data-theme="dark"] .da-wo-content [data-panel-type="success"],
+html[data-theme="dark"] .da-step-description .da-panel-success,
+html[data-theme="dark"] .da-step-description [data-panel-type="success"]
+    { background-color: #1b3a2c; color: #c8e8d6; }
 
-html[data-theme="dark"] .da-panel-error,
-html[data-theme="dark"] [data-panel-type="error"] {
-    background-color: #3d1f1c;
-    color: #e8c4be;
-}
+html[data-theme="dark"] .da-wo-content .da-panel-warning,
+html[data-theme="dark"] .da-wo-content [data-panel-type="warning"],
+html[data-theme="dark"] .da-step-description .da-panel-warning,
+html[data-theme="dark"] .da-step-description [data-panel-type="warning"]
+    { background-color: #3d3320; color: #ead7a8; }
+
+html[data-theme="dark"] .da-wo-content .da-panel-error,
+html[data-theme="dark"] .da-wo-content [data-panel-type="error"],
+html[data-theme="dark"] .da-step-description .da-panel-error,
+html[data-theme="dark"] .da-step-description [data-panel-type="error"]
+    { background-color: #3d1f1c; color: #e8c4be; }

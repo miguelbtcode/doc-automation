@@ -32,6 +32,46 @@ public static class StepsJsonConverter
         return model;
     }
 
+    public static string WoContentToJson(string htmlContent)
+    {
+        var root = new JsonObject
+        {
+            ["steps"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["order"] = 1,
+                    ["title"] = "description",
+                    ["type"] = "action",
+                    ["description"] = htmlContent,
+                },
+            },
+            ["post_steps"] = new JsonArray(),
+            ["reversion"] = new JsonArray(),
+        };
+        return root.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
+    }
+
+    public static string WoContentFromJson(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return string.Empty;
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("steps", out var steps))
+            {
+                foreach (var step in steps.EnumerateArray())
+                {
+                    if (step.TryGetProperty("description", out var d))
+                        return d.GetString() ?? string.Empty;
+                }
+            }
+        }
+        catch { }
+        return string.Empty;
+    }
+
     public static string ToJson(StepsEditorModel model)
     {
         var root = new JsonObject

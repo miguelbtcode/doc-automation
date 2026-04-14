@@ -3,6 +3,7 @@ namespace DocAutomation.Application.Features.Templates.Models;
 public class TemplateListItemDto
 {
     public Guid Id { get; set; }
+    public TemplateType Type { get; set; }
     public string Slug { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }

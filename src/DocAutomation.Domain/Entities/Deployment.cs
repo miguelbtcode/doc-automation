@@ -6,6 +6,7 @@ public class Deployment
 {
     public Guid Id { get; set; }
     public Guid TemplateId { get; set; }
+    public TemplateType TemplateType { get; set; } = TemplateType.Deployment;
     public string TemplateSlug { get; set; } = string.Empty;
     public string TemplateName { get; set; } = string.Empty;
     public int TemplateVersion { get; set; }

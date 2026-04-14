@@ -4,8 +4,8 @@ namespace DocAutomation.Web.Services.Ux;
 
 public class ThemeService(IJSRuntime js)
 {
-    public const string LightTheme = "standard-base";
-    public const string DarkTheme = "standard-dark-base";
+    public const string LightTheme = "material-base";
+    public const string DarkTheme = "material-dark-base";
 
     public string CurrentTheme { get; private set; } = LightTheme;
     public bool IsDark => CurrentTheme.Contains("dark", StringComparison.OrdinalIgnoreCase);

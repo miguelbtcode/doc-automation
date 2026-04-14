@@ -1,4 +1,4 @@
-@page "/deployments/new"
+@page "/work-orders/new"
 @using DocAutomation.Application.Features.Deployments.Commands.StartDeployment
 @using DocAutomation.Application.Features.Templates.Models
 @using DocAutomation.Application.Features.Deployments.Models
@@ -11,18 +11,18 @@
 @inject NotificationService NotificationService
 @inject RecentActionsService RecentActions
 
-<PageTitle>Nuevo Pase</PageTitle>
+<PageTitle>Nueva Work Order</PageTitle>
 
-<PageHeader Title="Nuevo Pase a Producción"
-            Subtitle="Seleccioná un template y completá los datos para generar el MVP"
+<PageHeader Title="Nueva Work Order"
+            Subtitle="Seleccioná un template y completá los datos para generar la WO"
             BackPath="/"
-            Breadcrumbs="@(new List<PageHeader.BreadcrumbItem> { new("Pases", "/deployments/history"), new("Nuevo") })" />
+            Breadcrumbs="@(new List<PageHeader.BreadcrumbItem> { new("Work Orders", "/work-orders/history"), new("Nueva") })" />
 
 <RadzenCard Variant="Variant.Outlined" Class="rz-p-6 rz-mb-4">
     <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-3">1. Seleccionar Template</RadzenText>
     <RadzenDropDown TValue="Guid?" Value="@_selectedTemplateId" Data="@_templates"
                     TextProperty="Name" ValueProperty="Id"
-                    Placeholder="Elegí un tipo de actividad..." Style="width: 100%;"
+                    Placeholder="Elegí un tipo de Work Order..." Style="width: 100%;"
                     Change="@(async (object v) => await OnTemplateSelected((Guid?)v))" />
 </RadzenCard>
 
@@ -33,7 +33,7 @@
 else if (_selectedTemplate is not null)
 {
     <RadzenCard Variant="Variant.Outlined" Class="rz-p-6 rz-mb-4">
-        <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-1">2. Completar Datos del Pase</RadzenText>
+        <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-1">2. Completar Datos de la WO</RadzenText>
         <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-4" Style="color: var(--rz-text-secondary-color);">
             Estos valores serán sustituidos en las descripciones de los pasos del template.
         </RadzenText>
@@ -57,7 +57,7 @@ else if (_selectedTemplate is not null)
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
         <RadzenButton Text="Cancelar" Variant="Variant.Flat" ButtonStyle="ButtonStyle.Base"
                       Click="@(() => Nav.NavigateTo("/"))" />
-        <RadzenButton Text="@(_starting ? "Generando..." : "Generar MVP")" Icon="play_arrow"
+        <RadzenButton Text="@(_starting ? "Generando..." : "Generar Work Order")" Icon="assignment"
                       ButtonStyle="ButtonStyle.Primary" Disabled="_starting" Click="@(() => StartAsync())" />
     </RadzenStack>
 }
@@ -72,7 +72,7 @@ else if (_selectedTemplate is not null)
 
     protected override async Task OnInitializedAsync()
     {
-        _templates = await Mediator.Send(new GetAllTemplatesQuery(TemplateType.Deployment));
+        _templates = await Mediator.Send(new GetAllTemplatesQuery(TemplateType.WorkOrder));
     }
 
     private async Task OnTemplateSelected(Guid? templateId)
@@ -115,12 +115,12 @@ else if (_selectedTemplate is not null)
                 _values,
                 "operator"));
 
-            NotificationService.Notify(NotificationSeverity.Success, "MVP generado correctamente.");
-            await RecentActions.LogAsync($"MVP generado: {_selectedTemplate.Name}",
-                detail: _values.GetValueOrDefault("ticket_jira") ?? _selectedTemplate.Slug,
+            NotificationService.Notify(NotificationSeverity.Success, "Work Order generada correctamente.");
+            await RecentActions.LogAsync($"WO generada: {_selectedTemplate.Name}",
+                detail: _selectedTemplate.Slug,
                 severity: RecentActionSeverity.Success,
-                href: $"/deployments/{id}");
-            Nav.NavigateTo($"/deployments/{id}");
+                href: $"/work-orders/{id}");
+            Nav.NavigateTo($"/work-orders/{id}");
         }
         catch (Exception ex)
         {

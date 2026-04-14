@@ -13,6 +13,8 @@ public class DeploymentConfiguration : IEntityTypeConfiguration<Deployment>
         builder.HasKey(d => d.Id);
         builder.Property(d => d.Id).HasDefaultValueSql("NEWSEQUENTIALID()");
 
+        builder.Property(d => d.TemplateType).IsRequired().HasDefaultValue(TemplateType.Deployment);
+
         builder.Property(d => d.TemplateSlug).IsRequired().HasMaxLength(100);
         builder.Property(d => d.TemplateName).IsRequired().HasMaxLength(200);
         builder.Property(d => d.TemplateVersion).IsRequired();

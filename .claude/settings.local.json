@@ -25,7 +25,8 @@
       "Bash(sed -i '' 's|Click=\"ToggleAsync\"|Click=\"@\\(\\(\\) => ToggleAsync\\(\\)\\)\"|g' src/DocAutomation.Web/Components/Shared/ThemeToggle.razor)",
       "Bash(sed -i '' 's|Click=\"SaveAsync\"|Click=\"@\\(\\(\\) => SaveAsync\\(\\)\\)\"|g' src/DocAutomation.Web/Components/Pages/Admin/Templates/TemplateEdit.razor src/DocAutomation.Web/Components/Pages/Admin/Templates/TemplateCreate.razor)",
       "Bash(npm install:*)",
-      "Bash([ ! -f \"node_modules/@atlaskit/icon/svgs/editor/$icon.svg\" ])"
+      "Bash([ ! -f \"node_modules/@atlaskit/icon/svgs/editor/$icon.svg\" ])",
+      "Bash(node esbuild.config.js)"
     ]
   }
 }

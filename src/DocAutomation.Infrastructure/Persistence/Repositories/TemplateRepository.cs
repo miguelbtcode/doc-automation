@@ -6,9 +6,15 @@ namespace DocAutomation.Infrastructure.Persistence.Repositories;
 
 public class TemplateRepository(DocAutomationDbContext context) : ITemplateRepository
 {
-    public async Task<IReadOnlyList<Template>> GetAllAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<Template>> GetAllAsync(
+        TemplateType? type = null,
+        CancellationToken ct = default
+    )
     {
-        return await context.Templates.Include(t => t.Inputs).OrderBy(t => t.Name).ToListAsync(ct);
+        var query = context.Templates.Include(t => t.Inputs).AsQueryable();
+        if (type.HasValue)
+            query = query.Where(t => t.Type == type.Value);
+        return await query.OrderBy(t => t.Name).ToListAsync(ct);
     }
 
     public Task<Template?> GetByIdAsync(Guid id, CancellationToken ct = default)

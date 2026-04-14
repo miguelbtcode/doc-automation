@@ -1,8 +1,11 @@
+using DocAutomation.Domain.Enums;
+
 namespace DocAutomation.Domain.Entities;
 
 public class Template
 {
     public Guid Id { get; set; }
+    public TemplateType Type { get; set; } = TemplateType.Deployment;
     public string Slug { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
